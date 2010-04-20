@@ -1,11 +1,30 @@
 import sys
 from datetime import datetime
+from dateutil.parser import parse
 import formencode
 from formencode import Invalid
 import sqlalchemy as sa
 import sqlalchemy.ext.declarative as sadec
 import sqlalchemy.sql as sasql
 import sqlalchemy.orm as saorm
+
+class DateTimeValidator(formencode.validators.FancyValidator):
+    
+    def validate_python(self, value, state):
+        try:
+            parse(value)
+        except ValueError, e:
+            if 'unknown string format' not in str(e):
+                raise
+            raise Invalid('Unknown date/time string "%s"' % value)
+
+SA_FORMENCODE_MAPPING = {
+    sa.types.Integer: formencode.validators.Int,
+    sa.types.Numeric: formencode.validators.Number,
+    sa.types.DateTime: DateTimeValidator,
+    sa.types.Date: DateTimeValidator,
+    sa.types.Time: DateTimeValidator,
+}
 
 MUTATORS = '__savalidation_mutators__'
 
@@ -124,8 +143,13 @@ class Validator(saorm.interfaces.MapperExtension):
     def validate(self, instance):
         try:
             fe_schema = self.create_fe_schema(instance)
+            colnames = instance._column_names
+            idict = {}
+            for colname in colnames:
+                if fe_schema.fields.has_key(colname):
+                    idict[colname] = instance.__dict__.get(colname, None)
             #print fe_schema, instance.__dict__
-            fe_schema.to_python(instance.__dict__)
+            fe_schema.to_python(idict)
         except Invalid, e:
             for k,v in e.unpack_errors().iteritems():
                 instance._validation_error(k, v)
@@ -145,6 +169,8 @@ class Validator(saorm.interfaces.MapperExtension):
     #before_update = before_insert
 
 class ValidationHandler(object):
+    default_kwargs = dict()
+    
     def __init__(self, instance, *args, **kwargs):
         self.instance = instance
         self.validator_ext = instance._find_validator_extension()
@@ -169,6 +195,9 @@ class ValidationHandler(object):
         self.add_validation_to_extension(field_names, fe_args, **kwargs)
     
     def add_validation_to_extension(self, field_names, fe_args, **kwargs):
+        new_kwargs = self.default_kwargs.copy()
+        new_kwargs.update(kwargs)
+        kwargs = new_kwargs
         if field_names is not None:
             for field_to_validate in field_names:
                 self.validator_ext.add_validation(self.fe_validator(*fe_args, **kwargs), field_to_validate)
