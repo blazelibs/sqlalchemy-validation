@@ -1,6 +1,5 @@
 import sys
 from datetime import datetime
-from dateutil.parser import parse
 import formencode
 from formencode import Invalid
 import sqlalchemy as sa
@@ -8,22 +7,9 @@ import sqlalchemy.ext.declarative as sadec
 import sqlalchemy.sql as sasql
 import sqlalchemy.orm as saorm
 
-class DateTimeValidator(formencode.validators.FancyValidator):
-    
-    def validate_python(self, value, state):
-        try:
-            parse(value)
-        except ValueError, e:
-            if 'unknown string format' not in str(e):
-                raise
-            raise Invalid('Unknown date/time string "%s"' % value)
-
 SA_FORMENCODE_MAPPING = {
     sa.types.Integer: formencode.validators.Int,
     sa.types.Numeric: formencode.validators.Number,
-    sa.types.DateTime: DateTimeValidator,
-    sa.types.Date: DateTimeValidator,
-    sa.types.Time: DateTimeValidator,
 }
 
 MUTATORS = '__savalidation_mutators__'
@@ -149,7 +135,8 @@ class Validator(saorm.interfaces.MapperExtension):
                 if fe_schema.fields.has_key(colname):
                     idict[colname] = instance.__dict__.get(colname, None)
             #print fe_schema, instance.__dict__
-            fe_schema.to_python(idict)
+            processed = fe_schema.to_python(idict)
+            instance.__dict__.update(processed)
         except Invalid, e:
             for k,v in e.unpack_errors().iteritems():
                 instance._validation_error(k, v)
