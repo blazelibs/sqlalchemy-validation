@@ -1,10 +1,12 @@
 import formencode
 import sqlalchemy as sa
-from _internal import ValidationHandler, ClassMutator, is_iterable
+from _internal import ValidationHandler, ClassMutator, is_iterable, \
+    SA_FORMENCODE_MAPPING
 
 class _ValidatesPresenceOf(ValidationHandler):
     fe_validator = formencode.FancyValidator
     type = 'field'
+    default_kwargs = dict(not_empty=True)
     
 class _ValidatesOneOf(ValidationHandler):
     fe_validator = formencode.validators.OneOf
@@ -32,7 +34,12 @@ class _ValidatesConstraints(ValidationHandler):
             if validate_length and isinstance(col.type, sa.types.String):
                 self.validator_ext.add_validation(formencode.validators.MaxLength(col.type.length), colname)
             if validate_nullable and not col.nullable:
-                self.validator_ext.add_validation(formencode.FancyValidator, colname)
+                self.validator_ext.add_validation(formencode.FancyValidator(not_empty=True), colname)
+            if validate_type:
+                for sa_type, fe_validator in SA_FORMENCODE_MAPPING.iteritems():
+                    if isinstance(col.type, sa_type):
+                        self.validator_ext.add_validation(fe_validator, colname)
+                        break
         
 
 validates_presence_of = ClassMutator(_ValidatesPresenceOf)

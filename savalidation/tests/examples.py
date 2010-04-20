@@ -35,9 +35,7 @@ class Family(Base):
         ('inactive', 'Inactive'),
         ('moved', 'Moved'),
     )
-
     val.validates_constraints()
-    val.validates_presence_of('name', 'reg_num')
     val.validates_one_of('status', [k for k, v in STATUS_CHOICES])
 
 class Person(Base):
@@ -59,5 +57,13 @@ class Person(Base):
     val.validates_constraints(exclude='createdts')
     val.validates_presence_of('nullable_but_required')
     val.validates_choices('family_role', ROLE_CHOICES)
+
+class IntegerType(Base):
+    __tablename__ = 'IntegerType'
+    id = sa.Column(sa.Integer, primary_key=True)
+    fld = sa.Column(sa.Integer)
+    fld2 = sa.Column(sa.SmallInteger)
+    fld3 = sa.Column(sa.BigInteger)
+    val.validates_constraints()
 
 meta.create_all(bind=engine)

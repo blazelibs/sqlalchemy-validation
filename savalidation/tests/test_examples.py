@@ -60,7 +60,7 @@ class TestFamily(object):
             ex.sess.commit()
             assert False, 'exception expected'
         except ValidationError, e:
-            expect = {'Family': {'reg_num': [u"Missing value"]}}
+            expect = {'Family': {'reg_num': [u"Please enter a value"]}}
             eq_(e.errors, expect)
             
     def test_missing_name(self):
@@ -70,7 +70,7 @@ class TestFamily(object):
             ex.sess.commit()
             assert False, 'exception expected'
         except ValidationError, e:
-            expect = {'Family': {'name': [u"Missing value"]}}
+            expect = {'Family': {'name': [u"Please enter a value"]}}
             eq_(e.errors, expect)
             
     def test_missing_both(self):
@@ -80,7 +80,7 @@ class TestFamily(object):
             ex.sess.commit()
             assert False, 'exception expected'
         except ValidationError, e:
-            expect = {'Family': {'reg_num': [u'Missing value'], 'name': [u'Missing value']}}
+            expect = {'Family': {'reg_num': [u'Please enter a value'], 'name': [u'Please enter a value']}}
             eq_(e.errors, expect)
     
     def test_name_too_long(self):
@@ -121,14 +121,45 @@ class TestPerson(object):
             f2 = ex.Person(name_first=u'f1'*50, name_last=u'l1', family_role=u'father', nullable_but_required=u'f')
             ex.sess.add(f2)
             ex.sess.commit()
+            assert False, 'should have been an exception'
         except ValidationError, e:
             assert e.errors['Person']['name_first'][0] == 'Enter a value less than 75 characters long'
     
     def test_nullable_but_required(self):
+        # set to None
+        try:
+            f2 = ex.Person(name_first=u'f1', name_last=u'l1', family_role=u'father', nullable_but_required=None)
+            ex.sess.add(f2)
+            ex.sess.commit()
+            assert False, 'should have been an exception'
+        except ValidationError, e:
+            expect = {'Person': {'nullable_but_required': [u'Please enter a value']}}
+            eq_(e.errors, expect)
+        # not given
         try:
             f2 = ex.Person(name_first=u'f1', name_last=u'l1', family_role=u'father')
             ex.sess.add(f2)
             ex.sess.commit()
+            assert False, 'should have been an exception'
         except ValidationError, e:
-            expect = {'Person': {'nullable_but_required': [u'Missing value']}}
+            expect = {'Person': {'nullable_but_required': [u'Please enter a value']}}
+            eq_(e.errors, expect)
+
+class TestTypes(object):
+    
+    def test_integer(self):
+        inst = ex.IntegerType(fld=10)
+        inst.fld2 = None
+        ex.sess.add(inst)
+        ex.sess.commit()
+        inst = ex.IntegerType(fld='5')
+        ex.sess.add(inst)
+        ex.sess.commit()
+        try:
+            inst = ex.IntegerType(fld='ten', fld2='ten', fld3='ten')
+            ex.sess.add(inst)
+            ex.sess.commit()
+            assert False, 'expected exception'
+        except ValidationError, e:
+            expect = {'IntegerType': {'fld': [u'Please enter an integer value'], 'fld2': [u'Please enter an integer value'], 'fld3': [u'Please enter an integer value']}}
             eq_(e.errors, expect)
