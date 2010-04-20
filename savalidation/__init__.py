@@ -1,6 +1,6 @@
 import sqlalchemy.ext.declarative as sadec
 import sqlalchemy.orm as saorm
-from _internal import process_mutators, Validator
+from _internal import process_mutators, Validator, ValidationError
 
 class DeclarativeBase(object):
 
@@ -40,22 +40,12 @@ def declarative_base(*args, **kwargs):
     kwargs.setdefault('constructor', None)
     return sadec.declarative_base(*args, **kwargs)
 
-class ValidationError(Exception):
-    """ issued when models are flushed but have validation errors """
-    def __init__(self, errors):
-        self.errors = errors
-        fields_with_errors = []
-        for model, fields in errors.iteritems():
-            for fname, errors in fields.iteritems():
-                fields_with_errors.append('%s.%s' % (model, fname))
-        msg = 'validation error(s) on: %s' % ','.join(fields_with_errors)
-        Exception.__init__(self, msg)
-
 class ValidatingSessionExtension(saorm.interfaces.SessionExtension):
     
     def before_flush(self, session, flush_context, instances):
         all_errors = {}
-        for instance in session:
+        instances_to_validate = list(session.new) + list(session.dirty)
+        for instance in instances_to_validate:
             try:
                 if hasattr(instance, '_find_validator_extension'):
                     validator_extension = instance._find_validator_extension()

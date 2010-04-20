@@ -41,6 +41,57 @@ class TestFamily(object):
         ex.sess.add(f1)
         ex.sess.commit()
         eq_(f1.status, u'active')
+        ex.sess.commit()
+    
+    def test_invalid_status(self):
+        try:
+            f1 = ex.Family(name=u'f1', reg_num=1, status='foobar')
+            ex.sess.add(f1)
+            ex.sess.commit()
+            assert False, 'exception expected'
+        except ValidationError, e:
+            expect = {'Family': {'status': [u"Value must be one of: active; inactive; moved (not 'foobar')"]}}
+            eq_(e.errors, expect)
+            
+    def test_missing_regnum(self):
+        try:
+            f1 = ex.Family(name=u'f1', status=u'active')
+            ex.sess.add(f1)
+            ex.sess.commit()
+            assert False, 'exception expected'
+        except ValidationError, e:
+            expect = {'Family': {'reg_num': [u"Missing value"]}}
+            eq_(e.errors, expect)
+            
+    def test_missing_name(self):
+        try:
+            f1 = ex.Family(reg_num=1, status=u'active')
+            ex.sess.add(f1)
+            ex.sess.commit()
+            assert False, 'exception expected'
+        except ValidationError, e:
+            expect = {'Family': {'name': [u"Missing value"]}}
+            eq_(e.errors, expect)
+            
+    def test_missing_both(self):
+        try:
+            f1 = ex.Family()
+            ex.sess.add(f1)
+            ex.sess.commit()
+            assert False, 'exception expected'
+        except ValidationError, e:
+            expect = {'Family': {'reg_num': [u'Missing value'], 'name': [u'Missing value']}}
+            eq_(e.errors, expect)
+    
+    def test_name_too_long(self):
+        try:
+            f1 = ex.Family(name=u'f1'*100, reg_num=1)
+            ex.sess.add(f1)
+            ex.sess.commit()
+            assert False, 'exception expected'
+        except ValidationError, e:
+            expect = {'Family': {'name': [u'Enter a value less than 75 characters long']}}
+            eq_(e.errors, expect)
 
 class TestPerson(object):
     def tearDown(self):
