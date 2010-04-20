@@ -98,10 +98,10 @@ class TestPerson(object):
         ex.sess.rollback()
     
     def test_id_is_auto_increment(self):
-        f1 = ex.Person(name_first=u'f1', name_last=u'l1', family_role=u'father')
+        f1 = ex.Person(name_first=u'f1', name_last=u'l1', family_role=u'father', nullable_but_required=u'f')
         ex.sess.add(f1)
         ex.sess.commit()
-        f2 = ex.Person(name_first=u'f1', name_last=u'l1', family_role=u'father')
+        f2 = ex.Person(name_first=u'f1', name_last=u'l1', family_role=u'father', nullable_but_required=u'f')
         f2.name_first = u'foobar'
         ex.sess.add(f2)
         ex.sess.commit()
@@ -109,7 +109,7 @@ class TestPerson(object):
     
     def test_family_role_when_invalid(self):
         try:
-            f2 = ex.Person(name_first=u'f1', name_last=u'l1', family_role=u'foobar')
+            f2 = ex.Person(name_first=u'f1', name_last=u'l1', family_role=u'foobar', nullable_but_required=u'f')
             ex.sess.add(f2)
             ex.sess.commit()
             assert False, 'should have been an exception'
@@ -118,8 +118,17 @@ class TestPerson(object):
 
     def test_first_name_is_too_long(self):
         try:
-            f2 = ex.Person(name_first=u'f1'*50, name_last=u'l1', family_role=u'father')
+            f2 = ex.Person(name_first=u'f1'*50, name_last=u'l1', family_role=u'father', nullable_but_required=u'f')
             ex.sess.add(f2)
             ex.sess.commit()
         except ValidationError, e:
             assert e.errors['Person']['name_first'][0] == 'Enter a value less than 75 characters long'
+    
+    def test_nullable_but_required(self):
+        try:
+            f2 = ex.Person(name_first=u'f1', name_last=u'l1', family_role=u'father')
+            ex.sess.add(f2)
+            ex.sess.commit()
+        except ValidationError, e:
+            expect = {'Person': {'nullable_but_required': [u'Missing value']}}
+            eq_(e.errors, expect)
