@@ -184,3 +184,16 @@ class TestTypes(object):
         except ValidationError, e:
             expect = {'NumericType': {'fld': [u'Please enter a number'], 'fld2': [u'Please enter a number']}}
             eq_(e.errors, expect)
+            
+    def test_date_time(self):
+        inst = ex.DateTimeType(fld='9/23/2010', fld3='10:25:33 am', fld2='2010-09-26 10:47:35 pm')
+        ex.sess.add(inst)
+        ex.sess.commit()
+        try:
+            inst = ex.DateTimeType(fld='foo', fld3='bar', fld2='baz')
+            ex.sess.add(inst)
+            ex.sess.commit()
+            assert False, 'expected exception'
+        except ValidationError, e:
+            expect = {'DateTimeType': {'fld2': ['Unknown date/time string "baz"'], 'fld': [u'Please enter the date in the form mm/dd/yyyy'], 'fld3': [u'You must enter minutes (after a :)']}}
+            eq_(e.errors, expect)

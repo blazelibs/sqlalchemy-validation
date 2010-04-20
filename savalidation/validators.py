@@ -1,7 +1,18 @@
+from dateutil.parser import parse
 import formencode
 import sqlalchemy as sa
 from _internal import ValidationHandler, ClassMutator, is_iterable, \
     SA_FORMENCODE_MAPPING
+
+class DateTimeConverter(formencode.validators.FancyValidator):
+    
+    def _to_python(self, value, state):
+        try:
+            return parse(value)
+        except ValueError, e:
+            if 'unknown string format' not in str(e):
+                raise
+            raise formencode.Invalid('Unknown date/time string "%s"' % value, value, state)
 
 class _ValidatesPresenceOf(ValidationHandler):
     fe_validator = formencode.FancyValidator
@@ -40,9 +51,19 @@ class _ValidatesConstraints(ValidationHandler):
                     if isinstance(col.type, sa_type):
                         self.validator_ext.add_validation(fe_validator, colname)
                         break
-        
+
+def _formencode_validator_factory(fevalidator, **kwargs):
+    class _ValidatesFeValidator(ValidationHandler):
+        fe_validator = fevalidator
+        type = 'field'
+        default_kwargs = kwargs
+    return ClassMutator(_ValidatesFeValidator)
+    
 
 validates_presence_of = ClassMutator(_ValidatesPresenceOf)
 validates_one_of = ClassMutator(_ValidatesOneOf)
 validates_choices = ClassMutator(_ValidatesChoices)
 validates_constraints = ClassMutator(_ValidatesConstraints)
+converts_date = _formencode_validator_factory(formencode.validators.DateConverter)
+converts_time = _formencode_validator_factory(formencode.validators.TimeConverter, use_datetime=True)
+converts_datetime = _formencode_validator_factory(DateTimeConverter)

@@ -72,6 +72,16 @@ class NumericType(Base):
     fld = sa.Column(sa.Numeric)
     fld2 = sa.Column(sa.Float)
     val.validates_constraints()
-
+    
+class DateTimeType(Base):
+    __tablename__ = 'DateTimeType'
+    id = sa.Column(sa.Integer, primary_key=True)
+    fld = sa.Column(sa.Date)
+    fld2 = sa.Column(sa.DateTime)
+    fld3 = sa.Column(sa.Time)
+    
+    val.converts_date('fld')
+    val.converts_datetime('fld2')
+    val.converts_time('fld3')
 
 meta.create_all(bind=engine)
