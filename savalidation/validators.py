@@ -1,4 +1,5 @@
 import formencode
+import sqlalchemy as sa
 from _internal import ValidationHandler, ClassMutator, is_iterable
 
 class _ValidatesPresenceOf(ValidationHandler):
@@ -24,7 +25,6 @@ class _ValidatesAuto(ValidationHandler):
             for colname in colnames:
                 col = self.instance.__mapper__.get_property(colname).columns[0]
                 if isinstance(col.type, sa.types.String):
-                    print col.type.length, colname
                     self.validator_ext.add_validation(formencode.validators.MaxLength(col.type.length), colname)
         
 
