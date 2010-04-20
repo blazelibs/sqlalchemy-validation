@@ -17,16 +17,14 @@ Session = saorm.sessionmaker(
     autoflush=False,
     extension=ValidatingSessionExtension()
 )
+
 sess = Session()
 
-def blow_up(*args, **kwargs):
-    assert False, 'blow_up called'
-    
 class Family(Base):
     __tablename__ = 'families'
     
     id = sa.Column(sa.Integer, primary_key=True)
-    createdts = sa.Column(sa.DateTime, nullable=False, server_default=sasql.text('CURRENT_TIMESTAMP'))
+    createdts = sa.Column(sa.DateTime, nullable=False, default=datetime.now, server_default=sasql.text('CURRENT_TIMESTAMP'))
     updatedts = sa.Column(sa.DateTime, onupdate=datetime.now)
     name =  sa.Column(sa.Unicode(75), nullable=False, unique=True)
     reg_num = sa.Column(sa.Integer, nullable=False, unique=True)
@@ -38,7 +36,7 @@ class Family(Base):
         ('moved', 'Moved'),
     )
 
-    val.validates_auto('length')
+    val.validates_constraints()
     val.validates_presence_of('name', 'reg_num')
     val.validates_one_of('status', [k for k, v in STATUS_CHOICES])
 
@@ -51,14 +49,15 @@ class Person(Base):
     name_first = sa.Column(sa.Unicode(75), nullable=False)
     name_last = sa.Column(sa.Unicode(75), nullable=False)
     family_role = sa.Column(sa.Unicode(20), nullable=False)
+    nullable_but_required = sa.Column(sa.Unicode(5))
     
     ROLE_CHOICES = (
         ('father', 'Father'),
         ('mother', 'Mother'),
         ('child', 'Child'),
     )
-    val.validates_auto('length', 'nullable')
-    val.validates_presence_of('family_role', 'name_last')
+    val.validates_constraints(exclude='createdts')
+    val.validates_presence_of('nullable_but_required')
     val.validates_choices('family_role', ROLE_CHOICES)
 
 meta.create_all(bind=engine)
