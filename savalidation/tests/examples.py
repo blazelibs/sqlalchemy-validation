@@ -73,4 +73,5 @@ class NumericType(Base):
     fld2 = sa.Column(sa.Float)
     val.validates_constraints()
 
+
 meta.create_all(bind=engine)
