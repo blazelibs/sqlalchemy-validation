@@ -147,8 +147,13 @@ class TestPerson(object):
 
 class TestTypes(object):
     
+    def tearDown(self):
+        # need this to clear the session after the exception catching below
+        ex.sess.rollback()
+    
     def test_integer(self):
         inst = ex.IntegerType(fld=10)
+        # this None helps test "missing" verse "value not entered"
         inst.fld2 = None
         ex.sess.add(inst)
         ex.sess.commit()
@@ -162,4 +167,20 @@ class TestTypes(object):
             assert False, 'expected exception'
         except ValidationError, e:
             expect = {'IntegerType': {'fld': [u'Please enter an integer value'], 'fld2': [u'Please enter an integer value'], 'fld3': [u'Please enter an integer value']}}
+            eq_(e.errors, expect)
+            
+    def test_numeric(self):
+        inst = ex.NumericType(fld=10.5)
+        ex.sess.add(inst)
+        ex.sess.commit()
+        inst = ex.NumericType(fld='10.5')
+        ex.sess.add(inst)
+        ex.sess.commit()
+        try:
+            inst = ex.NumericType(fld='ten dot five', fld2='ten dot five')
+            ex.sess.add(inst)
+            ex.sess.commit()
+            assert False, 'expected exception'
+        except ValidationError, e:
+            expect = {'NumericType': {'fld': [u'Please enter a number'], 'fld2': [u'Please enter a number']}}
             eq_(e.errors, expect)

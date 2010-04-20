@@ -65,5 +65,12 @@ class IntegerType(Base):
     fld2 = sa.Column(sa.SmallInteger)
     fld3 = sa.Column(sa.BigInteger)
     val.validates_constraints()
+    
+class NumericType(Base):
+    __tablename__ = 'NumericType'
+    id = sa.Column(sa.Integer, primary_key=True)
+    fld = sa.Column(sa.Numeric)
+    fld2 = sa.Column(sa.Float)
+    val.validates_constraints()
 
 meta.create_all(bind=engine)
