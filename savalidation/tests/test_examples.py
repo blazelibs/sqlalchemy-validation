@@ -50,8 +50,9 @@ class TestFamily(object):
             ex.sess.commit()
             assert False, 'exception expected'
         except ValidationError, e:
-            expect = {'Family': {'status': [u"Value must be one of: active; inactive; moved (not 'foobar')"]}}
-            eq_(e.errors, expect)
+            expect = {'status': [u"Value must be one of: active; inactive; moved (not 'foobar')"]}
+            eq_(f1.validation_errors, expect)
+            eq_(str(e), 'validation error(s) on: <Family id=None, name=f1>[status]')
             
     def test_missing_regnum(self):
         try:
@@ -60,8 +61,8 @@ class TestFamily(object):
             ex.sess.commit()
             assert False, 'exception expected'
         except ValidationError, e:
-            expect = {'Family': {'reg_num': [u"Please enter a value"]}}
-            eq_(e.errors, expect)
+            expect = {'reg_num': [u"Please enter a value"]}
+            eq_(f1.validation_errors, expect)
             
     def test_missing_name(self):
         try:
@@ -70,8 +71,23 @@ class TestFamily(object):
             ex.sess.commit()
             assert False, 'exception expected'
         except ValidationError, e:
-            expect = {'Family': {'name': [u"Please enter a value"]}}
-            eq_(e.errors, expect)
+            expect = {'name': [u"Please enter a value"]}
+            eq_(f1.validation_errors, expect)
+    
+    def test_multiple_invalid_instances(self):
+        try:
+            f1 = ex.Family(name='f1', status=u'active')
+            f2 = ex.Family(name='f2', status=u'active')
+            ex.sess.add(f1)
+            ex.sess.add(f2)
+            ex.sess.commit()
+            assert False, 'exception expected'
+        except ValidationError, e:
+            eq_(len(e.invalid_instances), 2)
+            expect = {'reg_num': [u"Please enter a value"]}
+            eq_(f1.validation_errors, expect)
+            eq_(f2.validation_errors, expect)
+            eq_(str(e), 'validation error(s) on: <Family id=None, name=f1>[reg_num]; <Family id=None, name=f2>[reg_num]')
             
     def test_missing_both(self):
         try:
@@ -80,8 +96,10 @@ class TestFamily(object):
             ex.sess.commit()
             assert False, 'exception expected'
         except ValidationError, e:
-            expect = {'Family': {'reg_num': [u'Please enter a value'], 'name': [u'Please enter a value']}}
-            eq_(e.errors, expect)
+            expect = {'reg_num': [u'Please enter a value'], 'name': [u'Please enter a value']}
+            eq_(len(e.invalid_instances), 1)
+            eq_(f1.validation_errors, expect)
+            eq_(str(e), 'validation error(s) on: <Family id=None, name=None>[reg_num,name]')
     
     def test_name_too_long(self):
         try:
@@ -90,8 +108,8 @@ class TestFamily(object):
             ex.sess.commit()
             assert False, 'exception expected'
         except ValidationError, e:
-            expect = {'Family': {'name': [u'Enter a value less than 75 characters long']}}
-            eq_(e.errors, expect)
+            expect = {'name': [u'Enter a value less than 75 characters long']}
+            eq_(f1.validation_errors, expect)
 
 class TestPerson(object):
     def tearDown(self):
@@ -114,7 +132,7 @@ class TestPerson(object):
             ex.sess.commit()
             assert False, 'should have been an exception'
         except ValidationError, e:
-            assert e.errors['Person']['family_role'][0].startswith('Value must be one of: father; mother; child')
+            assert f2.validation_errors['family_role'][0].startswith('Value must be one of: father; mother; child')
 
     def test_first_name_is_too_long(self):
         try:
@@ -123,7 +141,7 @@ class TestPerson(object):
             ex.sess.commit()
             assert False, 'should have been an exception'
         except ValidationError, e:
-            assert e.errors['Person']['name_first'][0] == 'Enter a value less than 75 characters long'
+            assert f2.validation_errors['name_first'][0] == 'Enter a value less than 75 characters long'
     
     def test_nullable_but_required(self):
         # set to None
@@ -133,8 +151,8 @@ class TestPerson(object):
             ex.sess.commit()
             assert False, 'should have been an exception'
         except ValidationError, e:
-            expect = {'Person': {'nullable_but_required': [u'Please enter a value']}}
-            eq_(e.errors, expect)
+            expect = {'nullable_but_required': [u'Please enter a value']}
+            eq_(f2.validation_errors, expect)
         # not given
         try:
             f2 = ex.Person(name_first=u'f1', name_last=u'l1', family_role=u'father')
@@ -142,8 +160,8 @@ class TestPerson(object):
             ex.sess.commit()
             assert False, 'should have been an exception'
         except ValidationError, e:
-            expect = {'Person': {'nullable_but_required': [u'Please enter a value']}}
-            eq_(e.errors, expect)
+            expect = {'nullable_but_required': [u'Please enter a value']}
+            eq_(f2.validation_errors, expect)
 
 class TestTypes(object):
     
@@ -166,8 +184,8 @@ class TestTypes(object):
             ex.sess.commit()
             assert False, 'expected exception'
         except ValidationError, e:
-            expect = {'IntegerType': {'fld': [u'Please enter an integer value'], 'fld2': [u'Please enter an integer value'], 'fld3': [u'Please enter an integer value']}}
-            eq_(e.errors, expect)
+            expect = {'fld': [u'Please enter an integer value'], 'fld2': [u'Please enter an integer value'], 'fld3': [u'Please enter an integer value']}
+            eq_(inst.validation_errors, expect)
             
     def test_numeric(self):
         inst = ex.NumericType(fld=10.5)
@@ -182,8 +200,8 @@ class TestTypes(object):
             ex.sess.commit()
             assert False, 'expected exception'
         except ValidationError, e:
-            expect = {'NumericType': {'fld': [u'Please enter a number'], 'fld2': [u'Please enter a number']}}
-            eq_(e.errors, expect)
+            expect = {'fld': [u'Please enter a number'], 'fld2': [u'Please enter a number']}
+            eq_(inst.validation_errors, expect)
             
     def test_date_time(self):
         inst = ex.DateTimeType(fld='9/23/2010', fld3='10:25:33 am', fld2='2010-09-26 10:47:35 pm')
@@ -195,5 +213,5 @@ class TestTypes(object):
             ex.sess.commit()
             assert False, 'expected exception'
         except ValidationError, e:
-            expect = {'DateTimeType': {'fld2': ['Unknown date/time string "baz"'], 'fld': [u'Please enter the date in the form mm/dd/yyyy'], 'fld3': [u'You must enter minutes (after a :)']}}
-            eq_(e.errors, expect)
+            expect = {'fld2': ['Unknown date/time string "baz"'], 'fld': [u'Please enter the date in the form mm/dd/yyyy'], 'fld3': [u'You must enter minutes (after a :)']}
+            eq_(inst.validation_errors, expect)

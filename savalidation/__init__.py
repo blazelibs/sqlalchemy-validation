@@ -1,6 +1,18 @@
 import sqlalchemy.ext.declarative as sadec
 import sqlalchemy.orm as saorm
-from _internal import process_mutators, Validator, ValidationError
+from _internal import process_mutators, Validator
+
+class ValidationError(Exception):
+    """ issued when models are flushed but have validation errors """
+    def __init__(self, invalid_instances):
+        self.invalid_instances = invalid_instances
+        fields_with_errors = []
+        for instance in invalid_instances:
+            fields = instance._get_validation_errors()
+            model = str(instance)
+            fields_with_errors.append('%s[%s]' % (model, ','.join(fields.keys())))
+        msg = 'validation error(s) on: %s' % '; '.join(fields_with_errors)
+        Exception.__init__(self, msg)
 
 class DeclarativeBase(object):
 
@@ -25,6 +37,7 @@ class DeclarativeBase(object):
         
     def _get_validation_errors(self):
         return self.__validation_errors__
+    validation_errors = property(_get_validation_errors)
     
     def _find_validator_extension(self):
         for extension in self.__mapper__.extension:
@@ -43,7 +56,7 @@ def declarative_base(*args, **kwargs):
 class ValidatingSessionExtension(saorm.interfaces.SessionExtension):
     
     def before_flush(self, session, flush_context, instances):
-        all_errors = {}
+        instances_with_error = []
         instances_to_validate = list(session.new) + list(session.dirty)
         for instance in instances_to_validate:
             try:
@@ -53,9 +66,9 @@ class ValidatingSessionExtension(saorm.interfaces.SessionExtension):
                         validator_extension.validate(instance)
                     errors = instance._get_validation_errors()
                     if errors:
-                        all_errors[instance.__class__.__name__] = errors
+                        instances_with_error.append(instance)
             except AttributeError, e:
-                if 'get_validation_errors' not in str(e):
+                if '_get_validation_errors' not in str(e):
                     raise
-        if all_errors:
-            raise ValidationError(all_errors)
+        if instances_with_error:
+            raise ValidationError(instances_with_error)

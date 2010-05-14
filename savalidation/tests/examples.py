@@ -37,6 +37,9 @@ class Family(Base):
     )
     val.validates_constraints()
     val.validates_one_of('status', [k for k, v in STATUS_CHOICES])
+    
+    def __str__(self):
+        return '<Family id=%s, name=%s>' % (self.id, self.name)
 
 class Person(Base):
     __tablename__ = 'people'
@@ -64,6 +67,7 @@ class IntegerType(Base):
     fld = sa.Column(sa.Integer)
     fld2 = sa.Column(sa.SmallInteger)
     fld3 = sa.Column(sa.BigInteger)
+    
     val.validates_constraints()
     
 class NumericType(Base):
@@ -71,6 +75,7 @@ class NumericType(Base):
     id = sa.Column(sa.Integer, primary_key=True)
     fld = sa.Column(sa.Numeric)
     fld2 = sa.Column(sa.Float)
+    
     val.validates_constraints()
     
 class DateTimeType(Base):

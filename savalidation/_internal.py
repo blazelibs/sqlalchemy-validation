@@ -63,17 +63,6 @@ def process_mutators(instance):
     for mutator, args, kwargs in mutators:
         mutator.process(instance, *args, **kwargs)
 
-class ValidationError(Exception):
-    """ issued when models are flushed but have validation errors """
-    def __init__(self, errors):
-        self.errors = errors
-        fields_with_errors = []
-        for model, fields in errors.iteritems():
-            for fname, errors in fields.iteritems():
-                fields_with_errors.append('%s.%s' % (model, fname))
-        msg = 'validation error(s) on: %s' % ','.join(fields_with_errors)
-        Exception.__init__(self, msg)
-
 class Validator(saorm.interfaces.MapperExtension):
     def __init__(self, *args):
         saorm.interfaces.MapperExtension.__init__(self)
