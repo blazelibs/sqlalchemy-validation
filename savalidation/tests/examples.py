@@ -23,6 +23,7 @@ sess = Session()
 class Family(Base):
     __tablename__ = 'families'
     
+    # SA COLUMNS
     id = sa.Column(sa.Integer, primary_key=True)
     createdts = sa.Column(sa.DateTime, nullable=False, default=datetime.now, server_default=sasql.text('CURRENT_TIMESTAMP'))
     updatedts = sa.Column(sa.DateTime, onupdate=datetime.now)
@@ -30,6 +31,7 @@ class Family(Base):
     reg_num = sa.Column(sa.Integer, nullable=False, unique=True)
     status =  sa.Column(sa.Unicode(15), nullable=False, default=u'active', server_default=u'active')
     
+    # VALIDATION
     STATUS_CHOICES = (
         ('active', 'Active'),
         ('inactive', 'Inactive'),
@@ -38,6 +40,7 @@ class Family(Base):
     val.validates_constraints()
     val.validates_one_of('status', [k for k, v in STATUS_CHOICES])
     
+    #OTHER
     def __str__(self):
         return '<Family id=%s, name=%s>' % (self.id, self.name)
 
