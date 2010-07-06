@@ -235,3 +235,18 @@ class TestTypes(object):
         except ValidationError, e:
             expect = {'fld2': ['Unknown date/time string "baz"'], 'fld': [u'Please enter the date in the form mm/dd/yyyy'], 'fld3': [u'You must enter minutes (after a :)']}
             eq_(inst.validation_errors, expect)
+
+class TestUnit(object):
+
+    def tearDown(self):
+        # need this to clear the session after the exception catching below
+        ex.sess.rollback()
+        ex.sess.execute('DELETE FROM %s' % ex.Family.__table__)
+        ex.sess.commit()
+
+    def test_inst_col_names(self):
+        f1 = ex.Family(name=u'f1', reg_num=1)
+        eq_(f1.sa_column_names(), ['id', 'createdts', 'updatedts', 'name', 'reg_num', 'status'])
+
+    def test_class_col_names(self):
+        eq_(ex.Family.sa_column_names(), ['id', 'createdts', 'updatedts', 'name', 'reg_num', 'status'])

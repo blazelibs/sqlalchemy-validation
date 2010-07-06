@@ -5,7 +5,7 @@ from _internal import ValidationHandler, ClassMutator, is_iterable, \
     SA_FORMENCODE_MAPPING
 
 class DateTimeConverter(formencode.validators.FancyValidator):
-    
+
     def _to_python(self, value, state):
         try:
             return parse(value)
@@ -18,7 +18,7 @@ class _ValidatesPresenceOf(ValidationHandler):
     fe_validator = formencode.FancyValidator
     type = 'field'
     default_kwargs = dict(not_empty=True)
-    
+
 class _ValidatesOneOf(ValidationHandler):
     fe_validator = formencode.validators.OneOf
     type = 'field'
@@ -37,9 +37,9 @@ class _ValidatesConstraints(ValidationHandler):
         validate_nullable = bool(kwargs.get('nullable', True))
         validate_type = bool(kwargs.get('type', True))
         excludes = kwargs.get('exclude', [])
-        colnames = self.instance._column_names
+        colnames = self.entitycls.sa_column_names()
         for colname in colnames:
-            col = self.instance.__mapper__.get_property(colname).columns[0]
+            col = self.entitycls.__mapper__.get_property(colname).columns[0]
             if colname in excludes or col.primary_key:
                 continue
             if validate_length and isinstance(col.type, sa.types.String):
@@ -58,7 +58,7 @@ def _formencode_validator_factory(fevalidator, **kwargs):
         type = 'field'
         default_kwargs = kwargs
     return ClassMutator(_ValidatesFeValidator)
-    
+
 
 validates_presence_of = ClassMutator(_ValidatesPresenceOf)
 validates_one_of = ClassMutator(_ValidatesOneOf)

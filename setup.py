@@ -26,5 +26,6 @@ setup(name='savalidation',
       zip_safe=False,
       install_requires=[
           'SQLAlchemy>=0.6.1',
+          'python-dateutil>=1.5'
       ],
       )
