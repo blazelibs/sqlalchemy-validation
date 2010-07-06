@@ -45,23 +45,28 @@ class ClassMutator(object):
         mutators = class_locals.setdefault(MUTATORS, [])
         mutators.append((self, args, kwargs))
 
-    def process(self, entity, *args, **kwargs):
+    def process(self, cls, *args, **kwargs):
         '''
         Process one mutator. This version simply calls the handler callable,
         but another mutator (sub)class could do more processing.
         '''
-        self.handler(entity, *args, **kwargs)
+        self.handler(cls, *args, **kwargs)
 
-def process_mutators(instance):
+def process_mutators(cls):
     '''
     Apply all mutators of the given instance. That is, loop over all mutators
     in the class's mutator list and process them.
     '''
+    #print '--- process mutators'
     # we don't use getattr here to not inherit from the parent mutators
     # inadvertantly if the current entity hasn't defined any mutator.
-    mutators = instance.__class__.__dict__.get(MUTATORS, [])
+    mutators = cls.__dict__.get(MUTATORS, [])
     for mutator, args, kwargs in mutators:
-        mutator.process(instance, *args, **kwargs)
+        mutator.process(cls, *args, **kwargs)
+
+class FEState(object):
+    def __init__(self, instance):
+        self.instance = instance
 
 class Validator(saorm.interfaces.MapperExtension):
     def __init__(self, *args):
@@ -107,7 +112,7 @@ class Validator(saorm.interfaces.MapperExtension):
         """
         idict = instance.__dict__
         retval = []
-        for colname in instance._column_names:
+        for colname in instance.sa_column_names():
             value = idict.get(colname, None)
             if value is None:
                 col = instance.__mapper__.get_property(colname).columns[0]
@@ -119,13 +124,13 @@ class Validator(saorm.interfaces.MapperExtension):
         instance.clear_validation_errors()
         try:
             fe_schema = self.create_fe_schema(instance)
-            colnames = instance._column_names
+            colnames = instance.sa_column_names()
             idict = {}
             for colname in colnames:
                 if fe_schema.fields.has_key(colname):
                     idict[colname] = instance.__dict__.get(colname, None)
-            #print fe_schema, instance.__dict__
-            processed = fe_schema.to_python(idict)
+            #print '--- validate', instance.__dict__, fe_schema, '-'*100
+            processed = fe_schema.to_python(idict, FEState(instance))
             instance.__dict__.update(processed)
         except Invalid, e:
             for k,v in e.unpack_errors().iteritems():
@@ -148,15 +153,16 @@ class Validator(saorm.interfaces.MapperExtension):
 class ValidationHandler(object):
     default_kwargs = dict()
 
-    def __init__(self, instance, *args, **kwargs):
-        self.instance = instance
-        self.validator_ext = instance._find_validator_extension()
+    def __init__(self, entitycls, *args, **kwargs):
+        #print '--- init validation handler'
+        self.entitycls = entitycls
+        self.validator_ext = entitycls._find_validator_extension()
 
         # add the Validator mapper extension if needed
         if not self.validator_ext:
             self.validator_ext = Validator()
-            instance.__mapper__.extension.append(self.validator_ext)
-
+            entitycls.__mapper__.extension.append(self.validator_ext)
+        #print '--- mapper is', object.__repr__(entitycls.__mapper__)
         if self.type == 'field':
             field_names = []
             fe_args = []

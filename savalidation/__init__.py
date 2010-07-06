@@ -14,26 +14,30 @@ class ValidationError(Exception):
         msg = 'validation error(s) on: %s' % '; '.join(fields_with_errors)
         Exception.__init__(self, msg)
 
+class DeclarativeMeta(sadec.DeclarativeMeta):
+    def __init__(cls, classname, bases, dict_):
+        retval = sadec.DeclarativeMeta.__init__(cls, classname, bases, dict_)
+        process_mutators(cls)
+        return retval
+
 class DeclarativeBase(object):
 
     def __init__(self, **kwargs):
-        process_mutators(self)
         sadec._declarative_constructor(self, **kwargs)
         self.clear_validation_errors()
 
     @saorm.reconstructor
     def init_on_load(self):
-        process_mutators(self)
         self.clear_validation_errors()
 
-    @property
-    def _column_names(self):
+    @classmethod
+    def sa_column_names(self):
         return [p.key for p in self.__mapper__.iterate_properties \
                                       if isinstance(p, saorm.ColumnProperty)]
 
     def to_dict(self, exclude=[]):
         data = dict([(name, getattr(self, name))
-                     for name in self._column_names if name not in exclude])
+                     for name in self.sa_column_names() if name not in exclude])
         return data
 
     def _validation_error(self, field_name, msg):
@@ -47,8 +51,9 @@ class DeclarativeBase(object):
     def clear_validation_errors(self):
         self.__validation_errors__ = {}
 
-    def _find_validator_extension(self):
-        for extension in self.__mapper__.extension:
+    @classmethod
+    def _find_validator_extension(cls):
+        for extension in cls.__mapper__.extension:
             if isinstance(extension, Validator):
                 break
         else:
@@ -59,6 +64,7 @@ class DeclarativeBase(object):
 def declarative_base(*args, **kwargs):
     kwargs.setdefault('cls', DeclarativeBase)
     kwargs.setdefault('constructor', None)
+    kwargs.setdefault('metaclass', DeclarativeMeta)
     return sadec.declarative_base(*args, **kwargs)
 
 class ValidatingSessionExtension(saorm.interfaces.SessionExtension):
