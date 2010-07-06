@@ -69,7 +69,7 @@ class Validator(saorm.interfaces.MapperExtension):
         self.field_validators = {}
         self.chained_validators = []
         #print 'validator init'
-    
+
     def add_validation(self, fe_validator, field):
         #print 'add validation', field, fe_validator
         if field:
@@ -77,7 +77,7 @@ class Validator(saorm.interfaces.MapperExtension):
             self.field_validators[field].append(fe_validator)
         else:
             self.chained_validators.append(fe_validator)
-    
+
     def create_fe_schema(self, instance):
         defaulting_columns = self.get_defaulting_columns(instance)
         fe_schema = formencode.Schema(allow_extra_fields = True)
@@ -88,20 +88,20 @@ class Validator(saorm.interfaces.MapperExtension):
         for fe_validator in self.chained_validators:
             fe_schema.add_chained_validator(fe_validator)
         return fe_schema
-    
+
     def get_defaulting_columns(self, instance):
         """
             if we have columns wich are currently None but which have a default
             value on the column, we skip validating them.  A default column,
             since it is set by the programmer, should be valid.
-            
+
             The real reason we have to do this is that defaults don't get applied
             early enough in the process for us to see what the values are and
             validate them.  The SA DefaultExecutionContext has get_insert_default()
             and get_update_default(), but not sure what kind of issues would
             be involved to have to create an execution context just to get
             default values.
-            
+
             So, it seems that no validation is better than false positives, so
             we skip it.
         """
@@ -114,8 +114,9 @@ class Validator(saorm.interfaces.MapperExtension):
                 if col.default:
                     retval.append(colname)
         return retval
-    
+
     def validate(self, instance):
+        instance.clear_validation_errors()
         try:
             fe_schema = self.create_fe_schema(instance)
             colnames = instance._column_names
@@ -129,7 +130,7 @@ class Validator(saorm.interfaces.MapperExtension):
         except Invalid, e:
             for k,v in e.unpack_errors().iteritems():
                 instance._validation_error(k, v)
-    
+
     #def before_insert(self, mapper, connection, instance):
     #    try:
     #        validator_extension = instance._find_validator_extension()
@@ -146,16 +147,16 @@ class Validator(saorm.interfaces.MapperExtension):
 
 class ValidationHandler(object):
     default_kwargs = dict()
-    
+
     def __init__(self, instance, *args, **kwargs):
         self.instance = instance
         self.validator_ext = instance._find_validator_extension()
-        
+
         # add the Validator mapper extension if needed
         if not self.validator_ext:
             self.validator_ext = Validator()
             instance.__mapper__.extension.append(self.validator_ext)
-        
+
         if self.type == 'field':
             field_names = []
             fe_args = []
@@ -169,7 +170,7 @@ class ValidationHandler(object):
             field_names = None
             fe_args = args
         self.add_validation_to_extension(field_names, fe_args, **kwargs)
-    
+
     def add_validation_to_extension(self, field_names, fe_args, **kwargs):
         new_kwargs = self.default_kwargs.copy()
         new_kwargs.update(kwargs)
@@ -178,8 +179,7 @@ class ValidationHandler(object):
             for field_to_validate in field_names:
                 self.validator_ext.add_validation(self.fe_validator(*fe_args, **kwargs), field_to_validate)
         else:
-           self.validator_ext.add_validation(self.fe_validator(*fe_args, **kwargs), None) 
-    
+           self.validator_ext.add_validation(self.fe_validator(*fe_args, **kwargs), None)
+
     def should_break(self, unknown_arg):
         return False
-    

@@ -19,33 +19,41 @@ class DeclarativeBase(object):
     def __init__(self, **kwargs):
         process_mutators(self)
         sadec._declarative_constructor(self, **kwargs)
-        self.__validation_errors__ = {}
-    
+        self.clear_validation_errors()
+
+    @saorm.reconstructor
+    def init_on_load(self):
+        process_mutators(self)
+        self.clear_validation_errors()
+
     @property
     def _column_names(self):
         return [p.key for p in self.__mapper__.iterate_properties \
                                       if isinstance(p, saorm.ColumnProperty)]
-        
+
     def to_dict(self, exclude=[]):
         data = dict([(name, getattr(self, name))
                      for name in self._column_names if name not in exclude])
         return data
-    
+
     def _validation_error(self, field_name, msg):
         errors = self.__validation_errors__.setdefault(field_name, [])
         errors.append(msg)
-        
+
     def _get_validation_errors(self):
         return self.__validation_errors__
     validation_errors = property(_get_validation_errors)
-    
+
+    def clear_validation_errors(self):
+        self.__validation_errors__ = {}
+
     def _find_validator_extension(self):
         for extension in self.__mapper__.extension:
             if isinstance(extension, Validator):
                 break
         else:
             extension = None
-            
+
         return extension
 
 def declarative_base(*args, **kwargs):
@@ -54,7 +62,7 @@ def declarative_base(*args, **kwargs):
     return sadec.declarative_base(*args, **kwargs)
 
 class ValidatingSessionExtension(saorm.interfaces.SessionExtension):
-    
+
     def before_flush(self, session, flush_context, instances):
         instances_with_error = []
         instances_to_validate = list(session.new) + list(session.dirty)
