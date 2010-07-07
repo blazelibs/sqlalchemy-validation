@@ -94,4 +94,43 @@ class DateTimeType(Base):
     val.converts_datetime('fld2')
     val.converts_time('fld3')
 
+class Customer(Base):
+    __tablename__ = 'customer'
+
+    # SA COLUMNS
+    id = sa.Column(sa.Integer, primary_key=True)
+    name =  sa.Column(sa.String(75), nullable=False)
+
+    orders = saorm.relationship('Order', backref='customer', lazy=False)
+    orders2 = saorm.relationship('Order2', backref='customer', lazy=False)
+
+    #OTHER
+    def __str__(self):
+        return '<Customer id=%s, name=%s>' % (self.id, self.name)
+
+class Order(Base):
+    __tablename__ = 'orders'
+
+    id = sa.Column(sa.Integer, primary_key=True)
+    customer_id = sa.Column(sa.Integer, sa.ForeignKey(Customer.id), nullable=False)
+    createdts = sa.Column(sa.DateTime, nullable=False, default=datetime.now, server_default=sasql.text('CURRENT_TIMESTAMP'))
+
+    val.validates_constraints()
+
+class Order2(Base):
+    __tablename__ = 'orders2'
+
+    id = sa.Column(sa.Integer, primary_key=True)
+    customer_id = sa.Column(sa.Integer, sa.ForeignKey(Customer.id))
+    createdts = sa.Column(sa.DateTime, nullable=False, server_default=sasql.text('CURRENT_TIMESTAMP'))
+
+    val.validates_constraints()
+    # if the value is None, the validation will be deferred until after a
+    # flush() is executed on the session.  Useful for default values and
+    # relations where the value doesn't show up as an attribute until a flush()
+    # is issues. NOTE: This only works when the DB doesn't issue exceptions
+    # for the value sent.  If you try to send NULL, to a non-nullable column,
+    # then you will get an IntegrityError.
+    val.validates_presence_of('customer_id', deferred=True)
+
 meta.create_all(bind=engine)
