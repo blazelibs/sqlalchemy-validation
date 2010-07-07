@@ -22,7 +22,6 @@ class TestFamily(object):
 
     def test_edit(self):
         f1 = ex.Family(name=u'test_edit', reg_num=1)
-        f2 = ex.Family(name=u'test_edit', reg_num=2)
         ex.sess.add(f1)
         ex.sess.commit()
         fid = f1.id
@@ -34,6 +33,7 @@ class TestFamily(object):
             ex.sess.commit()
             assert False, 'exception expected'
         except ValidationError, e:
+            ex.sess.rollback()
             expect = {'status': [u"Value must be one of: active; inactive; moved (not 'foobar')"]}
             eq_(f1.validation_errors, expect)
             eq_(str(e), 'validation error(s) on: <Family id=1, name=test_edit>[status]')
@@ -171,6 +171,7 @@ class TestPerson(object):
             ex.sess.commit()
             assert False, 'should have been an exception'
         except ValidationError, e:
+            ex.sess.rollback()
             expect = {'nullable_but_required': [u'Please enter a value']}
             eq_(f2.validation_errors, expect)
         # not given
@@ -235,6 +236,70 @@ class TestTypes(object):
         except ValidationError, e:
             expect = {'fld2': ['Unknown date/time string "baz"'], 'fld': [u'Please enter the date in the form mm/dd/yyyy'], 'fld3': [u'You must enter minutes (after a :)']}
             eq_(inst.validation_errors, expect)
+
+class TestOrders(object):
+
+    def tearDown(self):
+        ex.sess.remove()
+        ex.sess.execute('DELETE FROM %s' % ex.Order.__table__)
+        ex.sess.execute('DELETE FROM %s' % ex.Order2.__table__)
+        ex.sess.execute('DELETE FROM %s' % ex.Customer.__table__)
+        ex.sess.commit()
+
+    def test_with_id(self):
+        c = ex.Customer(name='ts1')
+        ex.sess.add(c)
+        ex.sess.flush()
+        o = ex.Order(customer_id = c.id)
+        ex.sess.add(o)
+        ex.sess.commit()
+        assert o.customer is c
+
+    def test_with_reference(self):
+        c1 = ex.Customer(name='ts1')
+        o = ex.Order(customer = c1)
+        ex.sess.add(o)
+        ex.sess.add(c1)
+        ex.sess.commit()
+        assert o.customer is c1
+
+    def test_fk_failure(self):
+        o = ex.Order(customer_id = 'foobar')
+        ex.sess.add(o)
+        try:
+            ex.sess.commit()
+            assert False
+        except ValidationError, e:
+            ex.sess.rollback()
+            expect = {'customer_id': [u'Please enter an integer value']}
+            eq_(o.validation_errors, expect)
+        o.customer_id = None
+        ex.sess.add(o)
+        # DB constraint preventing NULL will fail when flushed
+        try:
+            ex.sess.commit()
+        except Exception, e:
+            if 'IntegrityError' not in str(e):
+                raise
+
+    def test_order2_with_reference(self):
+        c1 = ex.Customer(name='ts1')
+        o = ex.Order2(customer = c1)
+        ex.sess.add(o)
+        ex.sess.add(c1)
+        ex.sess.commit()
+        assert o.customer is c1
+
+    def test_order2_with_none(self):
+        o = ex.Order2()
+        ex.sess.add(o)
+        try:
+            ex.sess.commit()
+            assert False
+        except ValidationError, e:
+            ex.sess.rollback()
+            expect = {'customer_id': [u'Please enter a value']}
+            eq_(o.validation_errors, expect)
 
 class TestUnit(object):
 

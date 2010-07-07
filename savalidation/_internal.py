@@ -13,6 +13,7 @@ SA_FORMENCODE_MAPPING = {
 }
 
 MUTATORS = '__savalidation_mutators__'
+MUTATORS_FLAG = '__savalidation_mutators_flag__'
 
 def is_iterable(possible_iterable):
     if isinstance(possible_iterable, basestring):
@@ -54,12 +55,16 @@ class ClassMutator(object):
 
 def process_mutators(cls):
     '''
-    Apply all mutators of the given instance. That is, loop over all mutators
-    in the class's mutator list and process them.
+    Loop over all mutators in the class's mutator list and process them.  This
+    function can be called multiple times, but will only process mutators for
+    a class once.
     '''
     #print '--- process mutators'
     # we don't use getattr here to not inherit from the parent mutators
     # inadvertantly if the current entity hasn't defined any mutator.
+    if getattr(cls, MUTATORS_FLAG, False):
+        return
+    setattr(cls, MUTATORS_FLAG, True)
     mutators = cls.__dict__.get(MUTATORS, [])
     for mutator, args, kwargs in mutators:
         mutator.process(cls, *args, **kwargs)
@@ -67,6 +72,15 @@ def process_mutators(cls):
 class FEState(object):
     def __init__(self, instance):
         self.instance = instance
+
+def should_apply(fieldname, instance, validator, type):
+    def_on_none = getattr(validator, '_sa_defer_on_none', False)
+    if not def_on_none:
+        return type == 'before_flush'
+    fvalue = instance.__dict__.get(fieldname, None)
+    if fvalue is not None:
+        return type == 'before_flush'
+    return type != 'before_flush'
 
 class Validator(saorm.interfaces.MapperExtension):
     def __init__(self, *args):
@@ -83,13 +97,14 @@ class Validator(saorm.interfaces.MapperExtension):
         else:
             self.chained_validators.append(fe_validator)
 
-    def create_fe_schema(self, instance):
-        defaulting_columns = self.get_defaulting_columns(instance)
+    def create_fe_schema(self, instance, type):
         fe_schema = formencode.Schema(allow_extra_fields = True)
-        #print self.field_validators
         for field, validators in self.field_validators.iteritems():
-            if field not in defaulting_columns:
-                fe_schema.add_field(field, formencode.compound.All(*validators))
+            validators_to_apply = []
+            for v in validators:
+                if should_apply(field, instance, v, type):
+                    validators_to_apply.append(v)
+            fe_schema.add_field(field, formencode.compound.All(*validators_to_apply))
         for fe_validator in self.chained_validators:
             fe_schema.add_chained_validator(fe_validator)
         return fe_schema
@@ -120,35 +135,29 @@ class Validator(saorm.interfaces.MapperExtension):
                     retval.append(colname)
         return retval
 
-    def validate(self, instance):
-        instance.clear_validation_errors()
+    def validate(self, instance, type):
+        if type == 'before_flush':
+            instance.clear_validation_errors()
         try:
-            fe_schema = self.create_fe_schema(instance)
+            fe_schema = self.create_fe_schema(instance, type)
             colnames = instance.sa_column_names()
             idict = {}
             for colname in colnames:
                 if fe_schema.fields.has_key(colname):
-                    idict[colname] = instance.__dict__.get(colname, None)
-            #print '--- validate', instance.__dict__, fe_schema, '-'*100
+                    idict[colname] = getattr(instance, colname, None)
+            #print '-------------', type, idict, fe_schema
             processed = fe_schema.to_python(idict, FEState(instance))
             instance.__dict__.update(processed)
+            #print '----valid', processed
         except Invalid, e:
             for k,v in e.unpack_errors().iteritems():
                 instance._validation_error(k, v)
 
-    #def before_insert(self, mapper, connection, instance):
-    #    try:
-    #        validator_extension = instance._find_validator_extension()
-    #        if validator_extension:
-    #            validator_extension.validate(instance)
-    #        errors = instance._get_validation_errors()
-    #        if errors:
-    #            raise ValidationError({instance.__class__.__name__: errors})
-    #    except AttributeError, e:
-    #        if '_find_validator_extension' not in str(e):
-    #            raise
+    #def after_insert(self, mapper, connection, instance):
+    #    print 'customer_id', instance, instance.customer_id
     #    return saorm.interfaces.EXT_CONTINUE
     #before_update = before_insert
+    #after_insert = before_insert
 
 class ValidationHandler(object):
     default_kwargs = dict()
@@ -178,12 +187,18 @@ class ValidationHandler(object):
         self.add_validation_to_extension(field_names, fe_args, **kwargs)
 
     def add_validation_to_extension(self, field_names, fe_args, **kwargs):
+        defer_flag = kwargs.pop('deferred', False)
         new_kwargs = self.default_kwargs.copy()
         new_kwargs.update(kwargs)
         kwargs = new_kwargs
         if field_names is not None:
             for field_to_validate in field_names:
-                self.validator_ext.add_validation(self.fe_validator(*fe_args, **kwargs), field_to_validate)
+                validator = self.fe_validator(*fe_args, **kwargs)
+                # some values only get populated after a flush, we tag these
+                # validators here
+                if defer_flag:
+                    validator._sa_defer_on_none = True
+                self.validator_ext.add_validation(validator, field_to_validate)
         else:
            self.validator_ext.add_validation(self.fe_validator(*fe_args, **kwargs), None)
 

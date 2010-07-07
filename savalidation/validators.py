@@ -45,7 +45,12 @@ class _ValidatesConstraints(ValidationHandler):
             if validate_length and isinstance(col.type, sa.types.String):
                 self.validator_ext.add_validation(formencode.validators.MaxLength(col.type.length), colname)
             if validate_nullable and not col.nullable:
-                self.validator_ext.add_validation(formencode.FancyValidator(not_empty=True), colname)
+                validator = formencode.FancyValidator(not_empty=True)
+                # some values only get populated after a flush, we tag these
+                # validators here
+                if col.default or col.foreign_keys or col.server_default:
+                    validator._sa_defer_on_none = True
+                self.validator_ext.add_validation(validator, colname)
             if validate_type:
                 for sa_type, fe_validator in SA_FORMENCODE_MAPPING.iteritems():
                     if isinstance(col.type, sa_type):
