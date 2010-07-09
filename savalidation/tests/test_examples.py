@@ -315,3 +315,27 @@ class TestUnit(object):
 
     def test_class_col_names(self):
         eq_(ex.Family.sa_column_names(), ['id', 'createdts', 'updatedts', 'name', 'reg_num', 'status'])
+
+class TestMixin(object):
+
+    def tearDown(self):
+        ex.sess.rollback()
+        ex.sess.execute('DELETE FROM %s' % ex.NoMixin.__table__)
+        ex.sess.commit()
+
+    def test_no_constructor(self):
+        nm = ex.NoMixin()
+        nm.name = 'tnc'
+        ex.sess.add(nm)
+        ex.sess.commit()
+        ex.sess.remove()
+        nm = ex.sess.query(ex.NoMixin).first()
+        assert nm.name == 'tnc', nm.name
+
+    def test_with_constructor(self):
+        nm = ex.NoMixin(name='tnc')
+        ex.sess.add(nm)
+        ex.sess.commit()
+        ex.sess.remove()
+        nm = ex.sess.query(ex.NoMixin).first()
+        assert nm.name == 'tnc', nm.name

@@ -16,11 +16,6 @@ class ValidationError(Exception):
 
 class ValidationMixin(object):
 
-    def __init__(self, **kwargs):
-        sadec._declarative_constructor(self, **kwargs)
-        process_mutators(self.__class__)
-        self.clear_validation_errors()
-
     @saorm.reconstructor
     def init_on_load(self):
         process_mutators(self.__class__)
@@ -57,8 +52,13 @@ class ValidationMixin(object):
 
         return extension
 
+def custom_constructor(self, **kwargs):
+    sadec._declarative_constructor(self, **kwargs)
+    if hasattr(self, 'init_on_load'):
+        self.init_on_load()
+
 def declarative_base(*args, **kwargs):
-    kwargs.setdefault('constructor', None)
+    kwargs.setdefault('constructor', custom_constructor)
     return sadec.declarative_base(*args, **kwargs)
 
 class ValidatingSessionExtension(saorm.interfaces.SessionExtension):
