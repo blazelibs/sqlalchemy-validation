@@ -4,7 +4,8 @@ import sqlalchemy.ext.declarative as sadec
 import sqlalchemy.sql as sasql
 import sqlalchemy.orm as saorm
 
-from savalidation import declarative_base, ValidatingSessionExtension, ValidationError
+from savalidation import declarative_base, ValidatingSessionExtension, \
+    ValidationError, ValidationMixin
 import savalidation.validators as val
 
 engine = sa.create_engine('sqlite://')
@@ -22,7 +23,7 @@ Session = saorm.scoped_session(
 
 sess = Session
 
-class Family(Base):
+class Family(Base, ValidationMixin):
     __tablename__ = 'families'
 
     # SA COLUMNS
@@ -46,7 +47,7 @@ class Family(Base):
     def __str__(self):
         return '<Family id=%s, name=%s>' % (self.id, self.name)
 
-class Person(Base):
+class Person(Base, ValidationMixin):
     __tablename__ = 'people'
 
     id = sa.Column(sa.Integer, primary_key=True)
@@ -66,7 +67,7 @@ class Person(Base):
     val.validates_presence_of('nullable_but_required')
     val.validates_choices('family_role', ROLE_CHOICES)
 
-class IntegerType(Base):
+class IntegerType(Base, ValidationMixin):
     __tablename__ = 'IntegerType'
     id = sa.Column(sa.Integer, primary_key=True)
     fld = sa.Column(sa.Integer)
@@ -75,7 +76,7 @@ class IntegerType(Base):
 
     val.validates_constraints()
 
-class NumericType(Base):
+class NumericType(Base, ValidationMixin):
     __tablename__ = 'NumericType'
     id = sa.Column(sa.Integer, primary_key=True)
     fld = sa.Column(sa.Numeric)
@@ -83,7 +84,7 @@ class NumericType(Base):
 
     val.validates_constraints()
 
-class DateTimeType(Base):
+class DateTimeType(Base, ValidationMixin):
     __tablename__ = 'DateTimeType'
     id = sa.Column(sa.Integer, primary_key=True)
     fld = sa.Column(sa.Date)
@@ -94,7 +95,7 @@ class DateTimeType(Base):
     val.converts_datetime('fld2')
     val.converts_time('fld3')
 
-class Customer(Base):
+class Customer(Base, ValidationMixin):
     __tablename__ = 'customer'
 
     # SA COLUMNS
@@ -108,7 +109,7 @@ class Customer(Base):
     def __str__(self):
         return '<Customer id=%s, name=%s>' % (self.id, self.name)
 
-class Order(Base):
+class Order(Base, ValidationMixin):
     __tablename__ = 'orders'
 
     id = sa.Column(sa.Integer, primary_key=True)
@@ -117,7 +118,7 @@ class Order(Base):
 
     val.validates_constraints()
 
-class Order2(Base):
+class Order2(Base, ValidationMixin):
     __tablename__ = 'orders2'
 
     id = sa.Column(sa.Integer, primary_key=True)

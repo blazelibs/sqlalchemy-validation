@@ -14,13 +14,7 @@ class ValidationError(Exception):
         msg = 'validation error(s) on: %s' % '; '.join(fields_with_errors)
         Exception.__init__(self, msg)
 
-# DeclarativeMeta used to be used, but isn't currently necessary.  If we don't
-# end up using it for something in the near future, it could be removed.
-class DeclarativeMeta(sadec.DeclarativeMeta):
-    def __init__(cls, classname, bases, dict_):
-        return sadec.DeclarativeMeta.__init__(cls, classname, bases, dict_)
-
-class DeclarativeBase(object):
+class ValidationMixin(object):
 
     def __init__(self, **kwargs):
         sadec._declarative_constructor(self, **kwargs)
@@ -64,9 +58,7 @@ class DeclarativeBase(object):
         return extension
 
 def declarative_base(*args, **kwargs):
-    kwargs.setdefault('cls', DeclarativeBase)
     kwargs.setdefault('constructor', None)
-    kwargs.setdefault('metaclass', DeclarativeMeta)
     return sadec.declarative_base(*args, **kwargs)
 
 class ValidatingSessionExtension(saorm.interfaces.SessionExtension):
