@@ -134,4 +134,11 @@ class Order2(Base, ValidationMixin):
     # then you will get an IntegrityError.
     val.validates_presence_of('customer_id', deferred=True)
 
+
+class NoMixin(Base):
+    __tablename__ = 'nomixin'
+
+    id = sa.Column(sa.Integer, primary_key=True)
+    name =  sa.Column(sa.String(75), nullable=False)
+
 meta.create_all(bind=engine)
