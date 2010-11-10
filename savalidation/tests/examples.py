@@ -141,4 +141,13 @@ class NoMixin(Base):
     id = sa.Column(sa.Integer, primary_key=True)
     name =  sa.Column(sa.String(75), nullable=False)
 
+class SomeObj(Base, ValidationMixin):
+    __tablename__ = 'some_objs'
+
+    id = sa.Column(sa.Integer, primary_key=True)
+    minlen = sa.Column(sa.String(25))
+
+    val.validates_constraints()
+    val.validates_minlen('minlen', 20)
+
 meta.create_all(bind=engine)
