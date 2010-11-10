@@ -147,9 +147,11 @@ class SomeObj(Base, ValidationMixin):
     id = sa.Column(sa.Integer, primary_key=True)
     minlen = sa.Column(sa.String(25))
     ipaddr = sa.Column(sa.String(15))
+    url = sa.Column(sa.String(50))
 
     val.validates_constraints()
     val.validates_minlen('minlen', 20)
     val.validates_ipaddr('ipaddr')
+    val.validates_url('url')
 
 meta.create_all(bind=engine)
