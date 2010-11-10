@@ -39,6 +39,16 @@ class _ValidatesMinLength(ValidationHandler):
             return True
         return False
 
+class _IPAddress(formencode.validators.IPAddress):
+    """ need a special class that will allow None through but not '' """
+    def is_empty(self, value):
+        # only consider None empty, not an empty string
+        return value is None
+
+class _ValidatesIPAddress(ValidationHandler):
+    fe_validator = _IPAddress
+    type = 'field'
+
 class _ValidatesChoices(_ValidatesOneOf):
     def add_validation_to_extension(self, field_names, fe_args, **kwargs):
         fe_args[0] = [k for k,v in fe_args[0]]
@@ -81,6 +91,7 @@ def _formencode_validator_factory(fevalidator, **kwargs):
 
 validates_choices = ClassMutator(_ValidatesChoices)
 validates_constraints = ClassMutator(_ValidatesConstraints)
+validates_ipaddr= ClassMutator(_ValidatesIPAddress)
 validates_minlen= ClassMutator(_ValidatesMinLength)
 validates_one_of = ClassMutator(_ValidatesOneOf)
 validates_presence_of = ClassMutator(_ValidatesPresenceOf)
@@ -88,4 +99,3 @@ validates_presence_of = ClassMutator(_ValidatesPresenceOf)
 converts_date = _formencode_validator_factory(formencode.validators.DateConverter)
 converts_time = _formencode_validator_factory(formencode.validators.TimeConverter, use_datetime=True)
 converts_datetime = _formencode_validator_factory(DateTimeConverter)
-
