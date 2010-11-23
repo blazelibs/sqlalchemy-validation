@@ -41,12 +41,14 @@ The code itself seems stable, but the API is likely to change in the future.
 import os
 from setuptools import setup, find_packages
 
-from savalidation import VERSION
+# this is here b/c we get import failures if trying to import VERSION from
+# savalidation and the venv isn't setup
+VERSION = '0.1'
 
 setup(name='SAValidation',
       version=VERSION,
       description="Active Record like validation on SQLAlchemy declarative model objects",
-      long_description=long_description,
+      long_description=__doc__,
       classifiers=[
         'Development Status :: 3 - Alpha',
         #'Development Status :: 4 - Beta',
