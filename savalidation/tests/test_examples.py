@@ -1,3 +1,4 @@
+from nose.plugins.skip import SkipTest
 from nose.tools import eq_, raises
 import sqlalchemy.exc as saexc
 import examples as ex
