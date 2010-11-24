@@ -105,7 +105,7 @@ class Validator(saorm.interfaces.MapperExtension):
             converters_to_apply = []
             for v in validators:
                 if should_apply(field, instance, v, type):
-                    if v._sv_convert_flag:
+                    if getattr(v, '_sv_convert_flag', False):
                         converters_to_apply.append(v)
                     else:
                         validators_to_apply.append(v)
