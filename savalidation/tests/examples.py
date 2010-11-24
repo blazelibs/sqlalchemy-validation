@@ -1,4 +1,5 @@
 from datetime import datetime
+import formencode
 import sqlalchemy as sa
 import sqlalchemy.ext.declarative as sadec
 import sqlalchemy.sql as sasql
@@ -153,5 +154,27 @@ class SomeObj(Base, ValidationMixin):
     val.validates_minlen('minlen', 20)
     val.validates_ipaddr('ipaddr')
     val.validates_url('url')
+
+class ReverseConverter(formencode.api.FancyValidator):
+    def _to_python(self, value, state):
+        if not isinstance(value, basestring):
+            raise formencode.Invalid('Must be a string type', value, state)
+        # this reverse a string or list...yah, I know, it looks funny
+        return value[::-1]
+
+validates_reverse = val._formencode_validator_factory(ReverseConverter)
+converts_reverse = val._formencode_validator_factory(ReverseConverter, sv_convert=True)
+
+class ConversionTester(Base, ValidationMixin):
+    __tablename__ = 'conversion_testers'
+
+    id = sa.Column(sa.Integer, primary_key=True)
+    val1 = sa.Column(sa.String(25))
+    val2 = sa.Column(sa.String(25))
+    val3 = sa.Column(sa.String(25))
+
+    validates_reverse('val1')
+    validates_reverse('val2', sv_convert=True)
+    converts_reverse('val3')
 
 meta.create_all(bind=engine)

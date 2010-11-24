@@ -98,16 +98,24 @@ class Validator(saorm.interfaces.MapperExtension):
             self.chained_validators.append(fe_validator)
 
     def create_fe_schema(self, instance, type):
-        fe_schema = formencode.Schema(allow_extra_fields = True)
+        fe_val_schema = formencode.Schema(allow_extra_fields = True)
+        fe_conv_schema = formencode.Schema(allow_extra_fields = True)
         for field, validators in self.field_validators.iteritems():
             validators_to_apply = []
+            converters_to_apply = []
             for v in validators:
                 if should_apply(field, instance, v, type):
-                    validators_to_apply.append(v)
-            fe_schema.add_field(field, formencode.compound.All(*validators_to_apply))
+                    if v._sv_convert_flag:
+                        converters_to_apply.append(v)
+                    else:
+                        validators_to_apply.append(v)
+            if validators_to_apply:
+                fe_val_schema.add_field(field, formencode.compound.All(*validators_to_apply))
+            if converters_to_apply:
+                fe_conv_schema.add_field(field, formencode.compound.All(*converters_to_apply))
         for fe_validator in self.chained_validators:
             fe_schema.add_chained_validator(fe_validator)
-        return fe_schema
+        return fe_val_schema, fe_conv_schema
 
     def get_defaulting_columns(self, instance):
         """
@@ -138,16 +146,21 @@ class Validator(saorm.interfaces.MapperExtension):
     def validate(self, instance, type):
         if type == 'before_flush':
             instance.clear_validation_errors()
+        colnames = instance.sa_column_names()
+        fe_val_schema, fe_conv_schema = self.create_fe_schema(instance, type)
+        self._validate_schema(instance, colnames, fe_val_schema, False)
+        self._validate_schema(instance, colnames, fe_conv_schema, True)
+
+    def _validate_schema(self, instance, colnames, schema, flag_convert):
+        idict = {}
+        for colname in colnames:
+            if schema.fields.has_key(colname):
+                idict[colname] = getattr(instance, colname, None)
         try:
-            fe_schema = self.create_fe_schema(instance, type)
-            colnames = instance.sa_column_names()
-            idict = {}
-            for colname in colnames:
-                if fe_schema.fields.has_key(colname):
-                    idict[colname] = getattr(instance, colname, None)
-            #print '-------------', type, idict, fe_schema
-            processed = fe_schema.to_python(idict, FEState(instance))
-            instance.__dict__.update(processed)
+            #print '-------------', idict, schema, flag_convert
+            processed = schema.to_python(idict, FEState(instance))
+            if flag_convert:
+                instance.__dict__.update(processed)
             #print '----valid', processed
         except Invalid, e:
             for k,v in e.unpack_errors().iteritems():
@@ -191,6 +204,7 @@ class ValidationHandler(object):
         new_kwargs = self.default_kwargs.copy()
         new_kwargs.update(kwargs)
         kwargs = new_kwargs
+        convert_flag = kwargs.pop('sv_convert', False)
         if field_names is not None:
             for field_to_validate in field_names:
                 validator = self.fe_validator(*fe_args, **kwargs)
@@ -198,9 +212,11 @@ class ValidationHandler(object):
                 # validators here
                 if defer_flag:
                     validator._sa_defer_on_none = True
+                validator._sv_convert_flag = convert_flag
                 self.validator_ext.add_validation(validator, field_to_validate)
         else:
-           self.validator_ext.add_validation(self.fe_validator(*fe_args, **kwargs), None)
+            fe_validator = self.fe_validator(*fe_args, **kwargs)
+            self.validator_ext.add_validation(fe_validator, None)
 
     def should_break(self, unknown_arg):
         return False
