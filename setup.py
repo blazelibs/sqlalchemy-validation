@@ -64,6 +64,7 @@ setup(name='SAValidation',
       zip_safe=False,
       install_requires=[
           'SQLAlchemy>=0.6.2',
-          'python-dateutil>=1.5'
+          'python-dateutil>=1.5',
+          'FormEncode>=1.2'
       ],
       )
