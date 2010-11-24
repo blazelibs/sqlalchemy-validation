@@ -339,3 +339,45 @@ class TestMixin(object):
         ex.sess.remove()
         nm = ex.sess.query(ex.NoMixin).first()
         assert nm.name == 'tnc', nm.name
+
+class TestConversions(object):
+    def setUp(self):
+        # need this to clear the session after the exception catching below
+        ex.sess.rollback()
+        ex.sess.execute('DELETE FROM %s' % ex.ConversionTester.__table__)
+        ex.sess.commit()
+
+    def test_ok(self):
+        e1 = ex.ConversionTester(val1='foo')
+        ex.sess.add(e1)
+        ex.sess.commit()
+        ex.sess.remove()
+        e1 = ex.sess.query(ex.ConversionTester).first()
+        eq_(e1.val1, 'foo')
+
+    def test_conversion_from_factory(self):
+        e1 = ex.ConversionTester(val3='foo')
+        ex.sess.add(e1)
+        ex.sess.commit()
+        ex.sess.remove()
+        e1 = ex.sess.query(ex.ConversionTester).first()
+        eq_(e1.val3, 'oof')
+
+    def test_conversion_from_kwarg(self):
+        e1 = ex.ConversionTester(val2='foo')
+        ex.sess.add(e1)
+        ex.sess.commit()
+        ex.sess.remove()
+        e1 = ex.sess.query(ex.ConversionTester).first()
+        eq_(e1.val2, 'oof')
+
+    def test_validation_failure(self):
+        try:
+            e1 = ex.ConversionTester(val3=2)
+            ex.sess.add(e1)
+            ex.sess.commit()
+            assert False
+        except ValidationError, e:
+            eq_(len(e.invalid_instances), 1)
+            expect = {'val3': [u"Must be a string type"]}
+            eq_(e1.validation_errors, expect)
