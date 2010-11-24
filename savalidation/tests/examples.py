@@ -172,9 +172,11 @@ class ConversionTester(Base, ValidationMixin):
     val1 = sa.Column(sa.String(25))
     val2 = sa.Column(sa.String(25))
     val3 = sa.Column(sa.String(25))
+    val4 = sa.Column(sa.String(25))
 
     validates_reverse('val1')
     validates_reverse('val2', sv_convert=True)
     converts_reverse('val3')
+    converts_reverse('val4', sv_convert=False)
 
 meta.create_all(bind=engine)
