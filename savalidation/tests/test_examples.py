@@ -368,6 +368,14 @@ class TestConversions(object):
         e1 = ex.sess.query(ex.ConversionTester).first()
         eq_(e1.val3, 'oof')
 
+    def test_conversion_from_factory_with_override(self):
+        e1 = ex.ConversionTester(val4='foo')
+        ex.sess.add(e1)
+        ex.sess.commit()
+        ex.sess.remove()
+        e1 = ex.sess.query(ex.ConversionTester).first()
+        eq_(e1.val4, 'foo')
+
     def test_conversion_from_kwarg(self):
         e1 = ex.ConversionTester(val2='foo')
         ex.sess.add(e1)
