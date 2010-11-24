@@ -341,6 +341,11 @@ class TestMixin(object):
         assert nm.name == 'tnc', nm.name
 
 class TestConversions(object):
+    @classmethod
+    def teardown_class(self):
+        ex.sess.rollback()
+        ex.sess.remove()
+
     def setUp(self):
         # need this to clear the session after the exception catching below
         ex.sess.rollback()
