@@ -1,5 +1,7 @@
 from dateutil.parser import parse
 import formencode
+import formencode.validators
+import formencode.national
 import sqlalchemy as sa
 from _internal import ValidationHandler, ClassMutator, is_iterable, \
     SA_FORMENCODE_MAPPING
@@ -105,6 +107,8 @@ validates_minlen= ClassMutator(_ValidatesMinLength)
 validates_one_of = ClassMutator(_ValidatesOneOf)
 validates_presence_of = ClassMutator(_ValidatesPresenceOf)
 validates_url = ClassMutator(_ValidatesURL)
+validates_email = _formencode_validator_factory(formencode.validators.Email)
+validates_usphone = _formencode_validator_factory(formencode.national.USPhoneNumber)
 
 converts_date = _formencode_validator_factory(formencode.validators.DateConverter, sv_convert=True)
 converts_time = _formencode_validator_factory(formencode.validators.TimeConverter, use_datetime=True, sv_convert=True)
