@@ -138,26 +138,27 @@ from setuptools import setup, find_packages
 # savalidation and the venv isn't setup
 VERSION = '0.1.2'
 
-setup(name='SAValidation',
-      version=VERSION,
-      description="Active Record like validation on SQLAlchemy declarative model objects",
-      long_description=__doc__,
-      classifiers=[
+setup(
+    name='SAValidation',
+    version=VERSION,
+    description="Active Record like validation on SQLAlchemy declarative model objects",
+    long_description=__doc__,
+    classifiers=[
         'Development Status :: 3 - Alpha',
         #'Development Status :: 4 - Beta',
         #'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
         ],
-      author='Randy Syring',
-      author_email='rsyring@gmail.com',
-      url='http://bitbucket.org/rsyring/sqlalchemy-validation/',
-      license='BSD',
-      packages=['savalidation'],
-      zip_safe=False,
-      install_requires=[
-          'SQLAlchemy>=0.6.2',
-          'python-dateutil>=1.5',
-          'FormEncode>=1.2'
-      ],
-      )
+    author='Randy Syring',
+    author_email='rsyring@gmail.com',
+    url='http://bitbucket.org/rsyring/sqlalchemy-validation/',
+    license='BSD',
+    packages=['savalidation'],
+    zip_safe=False,
+    install_requires=[
+        'SQLAlchemy<=0.6.999',
+        'python-dateutil>=1.5',
+        'FormEncode>=1.2'
+    ],
+)
