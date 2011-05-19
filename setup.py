@@ -136,7 +136,7 @@ from setuptools import setup, find_packages
 
 # this is here b/c we get import failures if trying to import VERSION from
 # savalidation and the venv isn't setup
-VERSION = '0.1.2'
+VERSION = '0.1.3'
 
 setup(
     name='SAValidation',
