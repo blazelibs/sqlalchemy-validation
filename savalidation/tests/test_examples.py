@@ -37,7 +37,7 @@ class TestFamily(object):
             ex.sess.rollback()
             expect = {'status': [u"Value must be one of: active; inactive; moved (not 'foobar')"]}
             eq_(f1.validation_errors, expect)
-            eq_(str(e), 'validation error(s) on: <Family id=1, name=test_edit>[status]')
+            eq_(str(e), 'validation error(s): <Family id=1, name=test_edit> [status: "Value must be one of: active; inactive; moved (not \'foobar\')"]')
         f1.status = u'inactive'
         ex.sess.commit()
 
@@ -73,7 +73,7 @@ class TestFamily(object):
         except ValidationError, e:
             expect = {'status': [u"Value must be one of: active; inactive; moved (not 'foobar')"]}
             eq_(f1.validation_errors, expect)
-            eq_(str(e), 'validation error(s) on: <Family id=None, name=f1>[status]')
+            eq_(str(e), 'validation error(s): <Family id=None, name=f1> [status: "Value must be one of: active; inactive; moved (not \'foobar\')"]')
 
     def test_missing_regnum(self):
         try:
@@ -108,7 +108,7 @@ class TestFamily(object):
             expect = {'reg_num': [u"Please enter a value"]}
             eq_(f1.validation_errors, expect)
             eq_(f2.validation_errors, expect)
-            eq_(str(e), 'validation error(s) on: <Family id=None, name=f1>[reg_num]; <Family id=None, name=f2>[reg_num]')
+            eq_(str(e), 'validation error(s): <Family id=None, name=f1> [reg_num: "Please enter a value"]; <Family id=None, name=f2> [reg_num: "Please enter a value"]')
 
     def test_missing_both(self):
         try:
@@ -120,7 +120,7 @@ class TestFamily(object):
             expect = {'reg_num': [u'Please enter a value'], 'name': [u'Please enter a value']}
             eq_(len(e.invalid_instances), 1)
             eq_(f1.validation_errors, expect)
-            eq_(str(e), 'validation error(s) on: <Family id=None, name=None>[reg_num,name]')
+            eq_(str(e), 'validation error(s): <Family id=None, name=None> [reg_num: "Please enter a value"]; [name: "Please enter a value"]')
 
     def test_name_too_long(self):
         try:

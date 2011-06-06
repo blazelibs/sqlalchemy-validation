@@ -6,12 +6,16 @@ class ValidationError(Exception):
     """ issued when models are flushed but have validation errors """
     def __init__(self, invalid_instances):
         self.invalid_instances = invalid_instances
-        fields_with_errors = []
+        instance_errors = []
         for instance in invalid_instances:
+            fields_with_errors = []
             fields = instance._get_validation_errors()
             model = str(instance)
-            fields_with_errors.append('%s[%s]' % (model, ','.join(fields.keys())))
-        msg = 'validation error(s) on: %s' % '; '.join(fields_with_errors)
+            field_errors = {}
+            for fname, errors in fields.iteritems():
+                fields_with_errors.append('[%s: "%s"]' % (fname, '"; "'.join(errors)))
+            instance_errors.append('%s %s' % (model, '; '.join(fields_with_errors)))
+        msg = 'validation error(s): %s' % '; '.join(instance_errors)
         Exception.__init__(self, msg)
 
 class ValidationMixin(object):
