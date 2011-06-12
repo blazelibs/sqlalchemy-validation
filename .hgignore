@@ -9,3 +9,6 @@ build/*
 *.*~
 savalidation.kpf
 glob:*.egg-info
+.coverage
+coverage.xml
+nosetests.xml
