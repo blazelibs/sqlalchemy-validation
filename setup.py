@@ -25,7 +25,8 @@ setup(
     author_email='rsyring@gmail.com',
     url='http://bitbucket.org/rsyring/sqlalchemy-validation/',
     license='BSD',
-    packages=['savalidation'],
+    packages=find_packages(),
+    include_package_data=True,
     zip_safe=False,
     install_requires=[
         # SA 0.7 breaks us :(
