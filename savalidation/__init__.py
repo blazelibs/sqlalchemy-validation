@@ -1,6 +1,8 @@
 import sqlalchemy.ext.declarative as sadec
 import sqlalchemy.orm as saorm
-from _internal import process_mutators, Validator
+from _internal import process_mutators, Validator, getversion
+
+VERSION = getversion()
 
 class ValidationError(Exception):
     """ issued when models are flushed but have validation errors """

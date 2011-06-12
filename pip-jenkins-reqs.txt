@@ -1,0 +1,9 @@
+nose
+
+# version (have to do version 3.4 b/c nosexcover will fail with newer version)
+# bug report for that: https://github.com/cmheisel/nose-xcover/issues/5
+coverage==3.4
+
+# xml coverage output that jenkins can read through the Cobertura Coverage
+# plugin
+nosexcover

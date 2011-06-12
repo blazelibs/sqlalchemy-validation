@@ -1,3 +1,4 @@
+import os
 import sys
 from datetime import datetime
 import formencode
@@ -220,3 +221,7 @@ class ValidationHandler(object):
 
     def should_break(self, unknown_arg):
         return False
+
+def getversion():
+    cdir = os.path.abspath(os.path.dirname(__file__))
+    return open(os.path.join(cdir, 'version.txt')).read().strip()
