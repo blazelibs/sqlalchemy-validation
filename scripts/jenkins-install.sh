@@ -5,6 +5,9 @@ if [ -z "$WORKSPACE" ]; then
     VENVDIR="/tmp/$PACKAGE-jenkins-venv"
 else
     VENVDIR="$WORKSPACE/.venv-install"
+    # don't want to be in the workspace b/c we want the package to come
+    # from the venv not the source
+    cd ..
 fi
 
 # delete the virtualenv, this ensures all packages are installed from scratch
