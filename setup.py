@@ -29,8 +29,7 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=[
-        # SA 0.7 breaks us :(
-        'SQLAlchemy<=0.6.999',
+        'SQLAlchemy>=0.7',
         # version 2 is out for PY 3, but the notes say to use 1.x for PY 2.x
         'python-dateutil<=1.9.999',
         'FormEncode>=1.2'
