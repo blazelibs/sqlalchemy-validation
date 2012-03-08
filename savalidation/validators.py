@@ -1,12 +1,21 @@
+import inspect
 import sys
+
 from dateutil.parser import parse
 import formencode
-import formencode.validators
+import formencode.validators as fev
 import formencode.national
 import sqlalchemy as sa
-from savalidation._internal import is_iterable, SA_FORMENCODE_MAPPING
+
+from savalidation._internal import is_iterable
 
 _ELV = '_sav_entity_linkers'
+
+# map a SA field type to a formencode validator for use in _ValidatesConstraints
+SA_FORMENCODE_MAPPING = {
+    sa.types.Integer: formencode.validators.Int,
+    sa.types.Numeric: formencode.validators.Number,
+}
 
 class EntityLinker(object):
     """
@@ -32,66 +41,60 @@ entity_linker = EntityLinker
 
 class ValidatorBase(object):
     fe_validator = None
-    type = 'field'
     default_kwargs = dict()
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, entity_cls, *args, **kwargs):
+        self.entitycls = entity_cls
         self.args = args
         self.kwargs = kwargs
-
-        ##print '--- init validation handler'
-        #self.entitycls = entitycls
-        #self.validator_ext = entitycls._find_validator_extension()
-        #
-        ## add the Validator mapper extension if needed
-        #if not self.validator_ext:
-        #    self.validator_ext = Validator()
-        #    entitycls.__mapper__.extension.append(self.validator_ext)
-        #print '--- mapper is', object.__repr__(entitycls.__mapper__)
-
-        if self.type == 'field':
-            self.split_field_names_from_args()
-        else:
-            self.field_names = None
-            self.fe_args = args
-
-    def split_field_names_from_args(self):
+        self.fe_field_validators = []
+        self.fe_entity_validators = []
         self.field_names = []
         self.fe_args = []
+
+        self.split_field_names_from_fe_args()
+        self.create_fe_validators()
+
+    def add_field_validator(self, field_name, fe_val):
+        if not hasattr(fe_val, '_sav_defer_on_none'):
+            fe_val._sav_defer_on_none = False
+        if not hasattr(fe_val, '_sav_convert_flag'):
+            fe_val._sav_convert_flag = False
+        self.fe_field_validators.append((field_name, fe_val))
+
+    def add_entity_validator(self, fe_val):
+        self.fe_entity_validators.append(fe_val)
+
+    def split_field_names_from_fe_args(self):
+        """
+            Some validators may want to take position arguments and field
+            names.  This method handles putting the args in the correct
+            internal variable.
+        """
+        index = 0
         for index, unknown_arg in enumerate(self.args):
-            if self.should_break(unknown_arg):
+            if self.arg_for_fe_validator(index, unknown_arg):
                 self.fe_args.append(unknown_arg)
                 break
             self.field_names.append(unknown_arg)
         self.fe_args.extend(self.args[index+1:])
 
-    def entity_fe_validators(self):
-        if self.type != 'entity' or self.fe_validator is None:
-            return ()
-        fe_validator = self.fe_validator(*self.args, **self.kwargs)
-        return (fe_validator,)
-
-    def field_fe_validators(self):
-        if self.type != 'field':
-            return ()
-
+    def create_fe_validators(self):
         defer_flag = self.kwargs.pop('deferred', False)
         kwargs = self.default_kwargs.copy()
         kwargs.update(self.kwargs)
         convert_flag = kwargs.pop('sv_convert', False)
 
-        validators = []
         for field_to_validate in self.field_names:
             validator = self.fe_validator(*self.fe_args, **kwargs)
             validator._sav_defer_on_none = defer_flag
             validator._sav_convert_flag = convert_flag
-            validators.append((field_to_validate, validator))
-        return validators
+            self.add_field_validator(field_to_validate, validator)
 
-    def should_break(self, unknown_arg):
+    def arg_for_fe_validator(self, index, unknown_arg):
         return False
 
-class DateTimeConverter(formencode.validators.FancyValidator):
+class DateTimeConverter(fev.FancyValidator):
     def _to_python(self, value, state):
         try:
             return parse(value)
@@ -103,16 +106,14 @@ class DateTimeConverter(formencode.validators.FancyValidator):
 @entity_linker
 class _ValidatesPresenceOf(ValidatorBase):
     fe_validator = formencode.FancyValidator
-    type = 'field'
     default_kwargs = dict(not_empty=True)
 
 class _ValidatesOneOf(ValidatorBase):
-    fe_validator = formencode.validators.OneOf
-    type = 'field'
-    def should_break(self, unknown_arg):
+    fe_validator = fev.OneOf
+    def arg_for_fe_validator(self, index, unknown_arg):
         return is_iterable(unknown_arg)
 
-class _MinLength(formencode.validators.MinLength):
+class _MinLength(fev.MinLength):
     """ need a special class that will allow None through but not '' """
     def is_empty(self, value):
         # only consider None empty, not an empty string
@@ -120,13 +121,12 @@ class _MinLength(formencode.validators.MinLength):
 
 class _ValidatesMinLength(ValidatorBase):
     fe_validator = _MinLength
-    type = 'field'
-    def should_break(self, unknown_arg):
+    def arg_for_fe_validator(self, index, unknown_arg):
         if isinstance(unknown_arg, int):
             return True
         return False
 
-class _IPAddress(formencode.validators.IPAddress):
+class _IPAddress(fev.IPAddress):
     """ need a special class that will allow None through but not '' """
     def is_empty(self, value):
         # only consider None empty, not an empty string
@@ -134,9 +134,8 @@ class _IPAddress(formencode.validators.IPAddress):
 
 class _ValidatesIPAddress(ValidatorBase):
     fe_validator = _IPAddress
-    type = 'field'
 
-class _URL(formencode.validators.URL):
+class _URL(fev.URL):
     """ need a special class that will allow None through but not '' """
     def is_empty(self, value):
         # only consider None empty, not an empty string
@@ -144,38 +143,51 @@ class _URL(formencode.validators.URL):
 
 class _ValidatesURL(ValidatorBase):
     fe_validator = _URL
-    type = 'field'
 
 class _ValidatesChoices(_ValidatesOneOf):
-    def add_validation_to_extension(self, field_names, fe_args, **kwargs):
-        fe_args[0] = [k for k,v in fe_args[0]]
-        ValidatorBase.add_validation_to_extension(self, field_names, fe_args, **kwargs)
+    def create_fe_validators(self):
+        # the first formencode parameter should be a sequence of pairs.  However,
+        # the FE validator needs just the list of keys that are valid, so we
+        # strip those off here.
+        self.fe_args[0] = [k for k,v in self.fe_args[0]]
+        ValidatorBase.create_fe_validators(self)
 
+@entity_linker
 class _ValidatesConstraints(ValidatorBase):
-    type = 'entity'
-    def add_validation_to_extension(self, field_names, validation_types, **kwargs):
-        validate_length = bool(kwargs.get('length', True))
-        validate_nullable = bool(kwargs.get('nullable', True))
-        validate_type = bool(kwargs.get('type', True))
-        excludes = kwargs.get('exclude', [])
-        colnames = self.entitycls.sa_column_names()
-        for colname in colnames:
+    def create_fe_validators(self):
+        # grab some values from the kwargs that apply to this validator
+        validate_length = bool(self.kwargs.get('length', True))
+        validate_nullable = bool(self.kwargs.get('nullable', True))
+        validate_type = bool(self.kwargs.get('type', True))
+        excludes = self.kwargs.get('exclude', [])
+
+        fe_validators = []
+        for colname in self.entitycls._sav_column_names():
+            # get the SA column instance
             col = self.entitycls.__mapper__.get_property(colname).columns[0]
+
+            # ignore primary keys
             if colname in excludes or col.primary_key:
                 continue
+
+            # validate lengths on String and Unicode types
             if validate_length and isinstance(col.type, sa.types.String):
-                self.validator_ext.add_validation(formencode.validators.MaxLength(col.type.length), colname)
+                self.add_field_validator(colname, fev.MaxLength(col.type.length))
+
+            # handle fields that are not nullable
             if validate_nullable and not col.nullable:
                 validator = formencode.FancyValidator(not_empty=True)
                 # some values only get populated after a flush, we tag these
                 # validators here
                 if col.default or col.foreign_keys or col.server_default:
-                    validator._sa_defer_on_none = True
-                self.validator_ext.add_validation(validator, colname)
+                    validator._sav_defer_on_none = True
+                self.add_field_validator(colname, validator)
+
+            # data-type validation
             if validate_type:
                 for sa_type, fe_validator in SA_FORMENCODE_MAPPING.iteritems():
                     if isinstance(col.type, sa_type):
-                        self.validator_ext.add_validation(fe_validator, colname)
+                        self.add_field_validator(colname, fe_validator)
                         break
 
 def _formencode_validator_factory(fevalidator, **kwargs):
@@ -187,16 +199,16 @@ def _formencode_validator_factory(fevalidator, **kwargs):
 
 
 validates_choices = EntityLinker(_ValidatesChoices)
-validates_constraints = EntityLinker(_ValidatesConstraints)
+validates_constraints = _ValidatesConstraints
 validates_ipaddr= EntityLinker(_ValidatesIPAddress)
 validates_minlen= EntityLinker(_ValidatesMinLength)
 validates_one_of = EntityLinker(_ValidatesOneOf)
 validates_presence_of = _ValidatesPresenceOf
 validates_required = _ValidatesPresenceOf
 validates_url = EntityLinker(_ValidatesURL)
-validates_email = _formencode_validator_factory(formencode.validators.Email)
+validates_email = _formencode_validator_factory(fev.Email)
 validates_usphone = _formencode_validator_factory(formencode.national.USPhoneNumber)
 
-converts_date = _formencode_validator_factory(formencode.validators.DateConverter, sv_convert=True)
-converts_time = _formencode_validator_factory(formencode.validators.TimeConverter, use_datetime=True, sv_convert=True)
+converts_date = _formencode_validator_factory(fev.DateConverter, sv_convert=True)
+converts_time = _formencode_validator_factory(fev.TimeConverter, use_datetime=True, sv_convert=True)
 converts_datetime = _formencode_validator_factory(DateTimeConverter, sv_convert=True)
