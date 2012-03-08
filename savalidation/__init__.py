@@ -4,7 +4,8 @@ import formencode
 import sqlalchemy as sa
 import sqlalchemy.ext.declarative as sadec
 import sqlalchemy.orm as saorm
-from savalidation._internal import process_mutators, Validator, getversion
+
+from savalidation._internal import getversion
 from savalidation.validators import _ELV
 
 VERSION = getversion()
@@ -46,13 +47,14 @@ class _ValidationHelper(object):
     def init_fe_validators(self):
         for val_class, args, kwargs in self.entity_linkers:
             # val_class should be a subclass of ValidatorBase
-            sav_val = val_class(*args, **kwargs)
+            sav_val = val_class(self.entity.__class__, *args, **kwargs)
 
             # chained FE validators from entity SAV validators
-            self.chained_validators.extend(sav_val.entity_fe_validators())
+            self.chained_validators.extend(sav_val.fe_entity_validators)
 
             # field FE validators from field SAV validators
-            for field_name, fe_val in sav_val.field_fe_validators():
+            for field_name, fe_val in sav_val.fe_field_validators:
+                #print field_name, fe_val
                 self.field_validators[field_name].append(fe_val)
 
     def clear_errors(self):

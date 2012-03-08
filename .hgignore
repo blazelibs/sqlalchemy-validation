@@ -12,3 +12,4 @@ glob:*.egg-info
 .coverage
 coverage.xml
 nosetests.xml
+*komodo*
