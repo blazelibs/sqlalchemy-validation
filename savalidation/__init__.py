@@ -26,6 +26,10 @@ class ValidationError(Exception):
         msg = 'validation error(s): %s' % '; '.join(instance_errors)
         Exception.__init__(self, msg)
 
+class _FEState(object):
+    def __init__(self, entity):
+        self.entity = entity
+
 class _ValidationHelper(object):
     """
         This class exists to "back-up" the ValidationMixin so that we can set
@@ -111,7 +115,7 @@ class _ValidationHelper(object):
                 idict[colname] = getattr(self.entity, colname, None)
         try:
             #print '-------------', idict, schema, flag_convert, self.entity
-            processed = schema.to_python(idict, self)
+            processed = schema.to_python(idict, _FEState(self.entity))
             if flag_convert:
                 self.entity.__dict__.update(processed)
             #print '----valid', processed

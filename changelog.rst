@@ -14,6 +14,8 @@ This release contains some **BC BREAKS**.
   before your session is created.
 * CHANGE: the validator API has changed.  If you have created custom validators
   you will need to look at the changes in validators.py.
+* the Formencode state object sent to a validator's method has changed the
+  "instance" attribute to be "entity."
 
 0.1.5 released 2011-06-11
 =========================
