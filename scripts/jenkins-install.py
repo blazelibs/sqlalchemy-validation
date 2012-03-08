@@ -12,5 +12,9 @@ bh.venv_create()
 # install package
 bh.vecall('pip', 'install', package)
 
+# change directory to one up so that we don't import the relative directory
+# with our "test" below
+os.chdir('..')
+
 # import module as our "test"
-bh.vecall('python', '-c', 'import savalidation')
+bh.vecall('python', '-c', 'from __future__ import absolute_import;import savalidation')
