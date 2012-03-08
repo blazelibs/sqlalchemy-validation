@@ -108,7 +108,6 @@ class TestFamily(object):
             expect = {'reg_num': [u"Please enter a value"]}
             eq_(f1.validation_errors, expect)
             eq_(f2.validation_errors, expect)
-            eq_(str(e), 'validation error(s): <Family id=None, name=f1> [reg_num: "Please enter a value"]; <Family id=None, name=f2> [reg_num: "Please enter a value"]')
 
     def test_missing_both(self):
         try:
@@ -120,7 +119,6 @@ class TestFamily(object):
             expect = {'reg_num': [u'Please enter a value'], 'name': [u'Please enter a value']}
             eq_(len(e.invalid_instances), 1)
             eq_(f1.validation_errors, expect)
-            eq_(str(e), 'validation error(s): <Family id=None, name=None> [reg_num: "Please enter a value"]; [name: "Please enter a value"]')
 
     def test_name_too_long(self):
         try:
