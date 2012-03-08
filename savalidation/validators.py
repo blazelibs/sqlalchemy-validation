@@ -190,7 +190,17 @@ class _ValidatesConstraints(ValidatorBase):
                         self.add_field_validator(colname, fe_validator)
                         break
 
-def _formencode_validator_factory(fevalidator, **kwargs):
+def formencode_factory(fevalidator, **kwargs):
+    """
+        Converts a formencode validator into an object that can be used in
+        an entity object for validation:
+
+        validates_int = formencode_factory(formencode.validators.Int)
+
+        class MyCar(Base):
+            year = Column(Int)
+            validates_int('year')
+    """
     class _ValidatesFeValidator(ValidatorBase):
         fe_validator = fevalidator
         type = 'field'
@@ -206,9 +216,9 @@ validates_one_of = EntityLinker(_ValidatesOneOf)
 validates_presence_of = _ValidatesPresenceOf
 validates_required = _ValidatesPresenceOf
 validates_url = EntityLinker(_ValidatesURL)
-validates_email = _formencode_validator_factory(fev.Email)
-validates_usphone = _formencode_validator_factory(formencode.national.USPhoneNumber)
+validates_email = formencode_factory(fev.Email)
+validates_usphone = formencode_factory(formencode.national.USPhoneNumber)
 
-converts_date = _formencode_validator_factory(fev.DateConverter, sv_convert=True)
-converts_time = _formencode_validator_factory(fev.TimeConverter, use_datetime=True, sv_convert=True)
-converts_datetime = _formencode_validator_factory(DateTimeConverter, sv_convert=True)
+converts_date = formencode_factory(fev.DateConverter, sv_convert=True)
+converts_time = formencode_factory(fev.TimeConverter, use_datetime=True, sv_convert=True)
+converts_datetime = formencode_factory(DateTimeConverter, sv_convert=True)
