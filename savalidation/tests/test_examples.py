@@ -312,10 +312,10 @@ class TestUnit(object):
 
     def test_inst_col_names(self):
         f1 = ex.Family(name=u'f1', reg_num=1)
-        eq_(f1.sa_column_names(), ['id', 'createdts', 'updatedts', 'name', 'reg_num', 'status'])
+        eq_(f1._sav_column_names(), ['id', 'createdts', 'updatedts', 'name', 'reg_num', 'status'])
 
     def test_class_col_names(self):
-        eq_(ex.Family.sa_column_names(), ['id', 'createdts', 'updatedts', 'name', 'reg_num', 'status'])
+        eq_(ex.Family._sav_column_names(), ['id', 'createdts', 'updatedts', 'name', 'reg_num', 'status'])
 
 class TestMixin(object):
 

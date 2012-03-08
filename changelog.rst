@@ -1,6 +1,20 @@
 Change Log
 ----------
 
+0.2.0 released ???
+=========================
+
+This release contains some **BC BREAKS**.
+
+* internal API cleaned up
+* refactored to use SQLAlchemy (SA) events, we are now compatable with & require
+  SA >= 0.7
+* CHANGE: if using SA < 0.7.6, savalidation.watch_session() must be called with each
+  instance of your session IF the savalidation module is being instantiated
+  before your session is created.
+* CHANGE: the validator API has changed.  If you have created custom validators
+  you will need to look at the changes in validators.py.
+
 0.1.5 released 2011-06-11
 =========================
 
