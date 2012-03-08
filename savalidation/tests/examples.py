@@ -5,24 +5,26 @@ import sqlalchemy.ext.declarative as sadec
 import sqlalchemy.sql as sasql
 import sqlalchemy.orm as saorm
 
-from savalidation import declarative_base, ValidatingSessionExtension, \
-    ValidationError, ValidationMixin
+from savalidation import ValidationMixin, watch_session
 import savalidation.validators as val
 
 engine = sa.create_engine('sqlite://')
 #engine.echo = True
 meta = sa.MetaData()
-Base = declarative_base(metadata=meta)
+Base = sadec.declarative_base(metadata=meta)
 
 Session = saorm.scoped_session(
     saorm.sessionmaker(
         bind=engine,
-        autoflush=False,
-        extension=ValidatingSessionExtension()
+        autoflush=False
     )
 )
 
 sess = Session
+
+# we only need watch_session() until this bug fix gets released:
+# http://www.sqlalchemy.org/trac/ticket/2424#comment:5
+watch_session(sess)
 
 class Family(Base, ValidationMixin):
     __tablename__ = 'families'
@@ -162,8 +164,8 @@ class ReverseConverter(formencode.api.FancyValidator):
         # this reverse a string or list...yah, I know, it looks funny
         return value[::-1]
 
-validates_reverse = val._formencode_validator_factory(ReverseConverter)
-converts_reverse = val._formencode_validator_factory(ReverseConverter, sv_convert=True)
+validates_reverse = val.formencode_factory(ReverseConverter)
+converts_reverse = val.formencode_factory(ReverseConverter, sv_convert=True)
 
 class ConversionTester(Base, ValidationMixin):
     __tablename__ = 'conversion_testers'

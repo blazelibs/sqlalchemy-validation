@@ -23,23 +23,26 @@ The following is a snippet from the examples.py file::
     import sqlalchemy.sql as sasql
     import sqlalchemy.orm as saorm
 
-    from savalidation import declarative_base, ValidatingSessionExtension, \
-        ValidationError, ValidationMixin
+    from savalidation import ValidationMixin, watch_session
     import savalidation.validators as val
 
     engine = sa.create_engine('sqlite://')
+    #engine.echo = True
     meta = sa.MetaData()
-    Base = declarative_base(metadata=meta)
+    Base = sadec.declarative_base(metadata=meta)
 
     Session = saorm.scoped_session(
         saorm.sessionmaker(
             bind=engine,
-            autoflush=False,
-            extension=ValidatingSessionExtension()
+            autoflush=False
         )
     )
 
     sess = Session
+
+    # we only need watch_session() until this bug fix gets released:
+    # http://www.sqlalchemy.org/trac/ticket/2424#comment:5
+    watch_session(sess)
 
     class Family(Base, ValidationMixin):
         __tablename__ = 'families'
@@ -58,7 +61,7 @@ The following is a snippet from the examples.py file::
             ('inactive', 'Inactive'),
             ('moved', 'Moved'),
         )
-        # will validate nullability & length of string types
+        # will validate nullability and string types
         val.validates_constraints()
         val.validates_one_of('status', [k for k, v in STATUS_CHOICES])
 
@@ -76,7 +79,6 @@ The following is a snippet from the examples.py file::
         name_last = sa.Column(sa.Unicode(75), nullable=False)
         family_role = sa.Column(sa.Unicode(20), nullable=False)
         nullable_but_required = sa.Column(sa.Unicode(5))
-        birthdate = sa.Column(sa.Date)
 
         ROLE_CHOICES = (
             ('father', 'Father'),
@@ -86,8 +88,30 @@ The following is a snippet from the examples.py file::
         val.validates_constraints(exclude='createdts')
         val.validates_presence_of('nullable_but_required')
         val.validates_choices('family_role', ROLE_CHOICES)
-        # will automatically convert the string to a python datetime.date object
-        val.converts_date('birthdate')
+
+    class ReverseConverter(formencode.api.FancyValidator):
+        def _to_python(self, value, state):
+            if not isinstance(value, basestring):
+                raise formencode.Invalid('Must be a string type', value, state)
+            # this reverse a string or list...yah, I know, it looks funny
+            return value[::-1]
+
+    validates_reverse = val.formencode_factory(ReverseConverter)
+    converts_reverse = val.formencode_factory(ReverseConverter, sv_convert=True)
+
+    class ConversionTester(Base, ValidationMixin):
+        __tablename__ = 'conversion_testers'
+
+        id = sa.Column(sa.Integer, primary_key=True)
+        val1 = sa.Column(sa.String(25))
+        val2 = sa.Column(sa.String(25))
+        val3 = sa.Column(sa.String(25))
+        val4 = sa.Column(sa.String(25))
+
+        validates_reverse('val1')
+        validates_reverse('val2', sv_convert=True)
+        converts_reverse('val3')
+        converts_reverse('val4', sv_convert=False)
 
 See more examples in the tests directory of the distribution.
 
@@ -108,9 +132,23 @@ Questions & Comments
 
 Please visit: http://groups.google.com/group/blazelibs
 
+Known Issues
+------------
+
+Final values that get set on an ORM mapped object attributes through
+relationships, the default or onupdate column parameters, and possibly others
+are not availble at the time validation is done.
+
+In some cases, this can be caught after the flush (before commit) when those
+values become available on the ORM object.
+
+Unfortunately, that is of limited value in the case where the the value that
+slipped through violates a DB constraint.  In that case, a true DB exception
+will be raised.
+
 Dependencies
 --------------
- * SQLAlchemy
+ * SQLAlchemy > 0.7
  * FormEncode
  * python-dateutil (for date/time converters)
  * Nose (if you want to run the tests)
@@ -126,4 +164,4 @@ This project borrows code and ideas from:
 Current Status
 ---------------
 
-The code itself seems stable, but the API is likely to change in the future.
+The code itself seems stable, but the API may change in the future.
