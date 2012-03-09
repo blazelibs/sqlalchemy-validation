@@ -1,3 +1,10 @@
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
+import gc
+import weakref
+
 from nose.plugins.skip import SkipTest
 from nose.tools import eq_, raises
 import sqlalchemy.exc as saexc
@@ -40,5 +47,27 @@ class TestWeakReferences(object):
         vh = ex.SomeObj()._sav
         try:
             vh.entity
+            assert False, 'expected exception'
         except EntityRefMissing:
             pass
+
+    def test_pickling(self):
+        so = ex.SomeObj(minlen=5)
+        assert so._sav.entity.minlen == 5
+        pstr = pickle.dumps(so)
+        del so
+
+        so2 = pickle.loads(pstr)
+        assert so2._sav.entity.minlen == 5
+
+        # make sure it's a weakref
+        vh = so2._sav
+        del so2
+        gc.collect()
+
+        try:
+            vh.entity
+            assert False, 'expected exception'
+        except EntityRefMissing:
+            pass
+
