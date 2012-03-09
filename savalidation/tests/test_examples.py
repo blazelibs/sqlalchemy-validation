@@ -1,7 +1,8 @@
 from nose.plugins.skip import SkipTest
 from nose.tools import eq_, raises
 import sqlalchemy.exc as saexc
-import examples as ex
+
+import savalidation.tests.examples as ex
 from savalidation import ValidationError
 
 class TestFamily(object):
@@ -9,7 +10,7 @@ class TestFamily(object):
     def tearDown(self):
         # need this to clear the session after the exception catching below
         ex.sess.rollback()
-        ex.sess.execute('DELETE FROM %s' % ex.Family.__table__)
+        ex.sess.query(ex.Family).delete()
         ex.sess.commit()
 
     def test_id_is_auto_increment(self):
