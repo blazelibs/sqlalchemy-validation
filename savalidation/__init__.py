@@ -257,19 +257,13 @@ class _EventHandler(object):
         cls.restore_and_raise(session, iwe, expunged)
 
 # until this bug gets fixed & released:
-#   http://www.sqlalchemy.org/trac/ticket/2424#comment:5
+#   http://www.sqlalchemy.org/trac/ticket/2424
 # these events will only work if this module is instantiated BEFORE your session
 # is created.  If that is not the case, then call watch_session() with your
 # session object and the events will be registered correctly.
 sa.event.listen(saorm.Session, 'before_flush', _EventHandler.before_flush)
-# need to use after_flush_postexec (instead of just after_flush) to avoid a
-# weird SA exception when doing testing with another project. I couldn't
-# reproduce in SAV tests.
-sa.event.listen(saorm.Session, 'after_flush_postexec', _EventHandler.after_flush)
+sa.event.listen(saorm.Session, 'after_flush', _EventHandler.after_flush)
 
 def watch_session(sess):
     sa.event.listen(sess, 'before_flush', _EventHandler.before_flush)
-    # need to use after_flush_postexec (instead of just after_flush) to avoid a
-    # weird SA exception when doing testing with another project. I couldn't
-    # reproduce in SAV tests.
-    sa.event.listen(sess, 'after_flush_postexec', _EventHandler.after_flush)
+    sa.event.listen(sess, 'after_flush', _EventHandler.after_flush)
