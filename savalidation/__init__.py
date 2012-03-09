@@ -1,4 +1,5 @@
 from collections import defaultdict
+import weakref
 
 import formencode
 import sqlalchemy as sa
@@ -26,6 +27,21 @@ class ValidationError(Exception):
         msg = 'validation error(s): %s' % '; '.join(instance_errors)
         Exception.__init__(self, msg)
 
+class EntityRefMissing(Exception):
+    """
+        _ValidationHelper uses a weak reference to the entity instance to make
+        sure SA's identity map doesn't stay populated b/c of a strong reference
+        to the entity.
+
+        If a request for the entity reference is made, but the weak reference
+        has lots its link to the entity instance, this exception is raised.
+
+        This shouldn't happen normally, because the only time an entity
+        reference should be needed is during validation and the only time
+        validation should be triggered is when the Session has a reference
+        to the entity and is in the before_flush or after_flush state.
+    """
+
 class _FEState(object):
     def __init__(self, entity):
         self.entity = entity
@@ -38,11 +54,19 @@ class _ValidationHelper(object):
     """
     def __init__(self, entity):
         self.clear_errors()
-        self.entity = entity
+        self.entref = weakref.ref(entity)
         self.field_validators = defaultdict(list)
         self.chained_validators = []
 
         self.init_fe_validators()
+
+    @property
+    def entity(self):
+        entity = self.entref()
+        if entity is None:
+            raise EntityRefMissing('A request for the entity occured, but that'
+                ' object is no longer available through its weak reference.')
+        return entity
 
     @property
     def entity_linkers(self):
