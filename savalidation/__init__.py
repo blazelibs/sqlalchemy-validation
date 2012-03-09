@@ -68,6 +68,27 @@ class _ValidationHelper(object):
                 ' object is no longer available through its weak reference.')
         return entity
 
+    def __getstate__(self):
+        """
+            need to do some hoop jumping so that this object can be pickled
+            without the weakref getting in the way
+        """
+        state = dict(self.__dict__)
+        state['entity'] = self.entity
+        del state['entref']
+        return state
+
+    def __setstate__(self, state):
+        """
+            complement's __getstate__ so that we can re-enstantiate the object
+        """
+        print 'setstate'
+        entity = state['entity']
+        print weakref.getweakrefs(entity)
+        del state['entity']
+        self.__dict__ = state
+        self.entref = weakref.ref(entity)
+
     @property
     def entity_linkers(self):
         return self.entity._sav_entity_linkers
