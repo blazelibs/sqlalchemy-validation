@@ -1,4 +1,5 @@
 from collections import defaultdict
+import types
 import weakref
 
 import formencode
@@ -57,8 +58,10 @@ class _ValidationHelper(object):
         self.entref = weakref.ref(entity)
         self.field_validators = defaultdict(list)
         self.chained_validators = []
+        self.before_flush_methods = []
 
         self.init_fe_validators()
+        self.init_before_flush_methods()
 
     @property
     def entity(self):
@@ -82,9 +85,8 @@ class _ValidationHelper(object):
         """
             complement's __getstate__ so that we can re-enstantiate the object
         """
-        print 'setstate'
         entity = state['entity']
-        print weakref.getweakrefs(entity)
+
         del state['entity']
         self.__dict__ = state
         self.entref = weakref.ref(entity)
@@ -105,6 +107,18 @@ class _ValidationHelper(object):
             for field_name, fe_val in sav_val.fe_field_validators:
                 #print field_name, fe_val
                 self.field_validators[field_name].append(fe_val)
+
+    def init_before_flush_methods(self):
+        for attr_name, attr_obj in self.entity.__class__.__dict__.iteritems():
+            if getattr(attr_obj, '_sav_before_flush', False):
+                # don't want to get into trouble w/ strong references, so only
+                # keep a copy of the name of the attribute
+                self.before_flush_methods.append(attr_name)
+
+    def trigger_before_flush_methods(self):
+        for mname in self.before_flush_methods:
+            method_obj = getattr(self.entity, mname)
+            method_obj()
 
     def clear_errors(self):
         self.errors = defaultdict(list)
@@ -189,15 +203,6 @@ class ValidationMixin(object):
                      for name in self.sa_column_names() if name not in exclude])
         return data
 
-#def custom_constructor(self, **kwargs):
-#    sadec._declarative_constructor(self, **kwargs)
-#    if hasattr(self, 'init_on_load'):
-#        self.init_on_load()
-#
-#def declarative_base(*args, **kwargs):
-#    kwargs.setdefault('constructor', custom_constructor)
-#    return sadec.declarative_base(*args, **kwargs)
-
 class _EventHandler(object):
 
     @staticmethod
@@ -215,10 +220,11 @@ class _EventHandler(object):
     @classmethod
     def do_validation(cls, insts_to_val, insts_with_err, type):
         for instance in insts_to_val:
-            if not isinstance(instance, ValidationMixin):
-                continue
             if instance in insts_with_err:
                 continue
+
+            instance._sav.trigger_before_flush_methods()
+
             errors = instance._sav.validate(type)
             if errors:
                 insts_with_err.append(instance)
@@ -234,7 +240,20 @@ class _EventHandler(object):
     @classmethod
     def before_flush(cls, session, flush_context, instances):
         iwe = session._sav_insts_with_err = []
-        itv = session._sav_insts_to_val = list(session.new) + list(session.dirty)
+        itv = session._sav_insts_to_val = []
+
+        for inst in session.new:
+            if not isinstance(inst, ValidationMixin):
+                continue
+            itv.append(inst)
+
+        for inst in session.dirty:
+            if not isinstance(inst, ValidationMixin):
+                continue
+
+            if session.is_modified(inst):
+                itv.append(inst)
+
         cls.do_validation(itv, iwe, 'before_flush')
 
         # expunge all instances with an error from the session so that they

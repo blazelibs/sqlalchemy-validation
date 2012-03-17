@@ -7,6 +7,7 @@ import sqlalchemy.orm as saorm
 
 from savalidation import ValidationMixin, watch_session
 import savalidation.validators as val
+from savalidation.helpers import before_flush
 
 engine = sa.create_engine('sqlite://')
 #engine.echo = True
@@ -69,6 +70,11 @@ class Person(Base, ValidationMixin):
     val.validates_constraints(exclude='createdts')
     val.validates_presence_of('nullable_but_required')
     val.validates_choices('family_role', ROLE_CHOICES)
+
+    @before_flush
+    def alter_name(self):
+        if self.name_first == u'randy':
+            self.name_first = u'randall'
 
 class IntegerType(Base, ValidationMixin):
     __tablename__ = 'IntegerType'

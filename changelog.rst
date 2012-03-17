@@ -16,6 +16,7 @@ This release contains some **BC BREAKS**.
   you will need to look at the changes in validators.py.
 * the Formencode state object sent to a validator's method has changed the
   "instance" attribute to be "entity."
+* add before_flush() helper to decorate entity instance methods
 
 0.1.5 released 2011-06-11
 =========================
