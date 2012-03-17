@@ -76,6 +76,11 @@ class Person(Base, ValidationMixin):
         if self.name_first == u'randy':
             self.name_first = u'randall'
 
+    @before_flush
+    def enforce_president(self):
+        if self.name_last == u'Obama' and self.name_first != 'President':
+            self.add_validation_error('name_first', 'must be "President"')
+
 class IntegerType(Base, ValidationMixin):
     __tablename__ = 'IntegerType'
     id = sa.Column(sa.Integer, primary_key=True)
@@ -117,6 +122,11 @@ class Customer(Base, ValidationMixin):
     #OTHER
     def __str__(self):
         return '<Customer id=%s, name=%s>' % (self.id, self.name)
+
+    @before_flush
+    def no_sam(self):
+        if self.name == 'Sam':
+            self.add_validation_error('name', 'Sam not allowed')
 
 class Order(Base, ValidationMixin):
     __tablename__ = 'orders'

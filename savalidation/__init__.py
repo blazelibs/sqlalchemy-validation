@@ -129,7 +129,9 @@ class _ValidationHelper(object):
     def validate(self, type):
         # if there were no validators setup, then just return
         if not self.entity_linkers:
-            return
+            # make sure we return errors here since a before_flush() method
+            # could have added validation errors
+            return self.errors
 
         if type == 'before_flush':
             self.clear_errors()
@@ -192,6 +194,9 @@ class ValidationMixin(object):
     @property
     def validation_errors(self):
         return self._sav.errors
+
+    def add_validation_error(self, field_name, msg):
+        return self._sav.add_error(field_name, msg)
 
     @classmethod
     def _sav_column_names(self):

@@ -9,7 +9,7 @@ from nose.plugins.skip import SkipTest
 from nose.tools import eq_, raises
 import sqlalchemy.exc as saexc
 
-from savalidation import EntityRefMissing
+from savalidation import EntityRefMissing, ValidationError
 import savalidation.tests.examples as ex
 
 class TestWeakReferences(object):
@@ -86,3 +86,34 @@ class TestBeforeFlushHelper(object):
         ex.sess.commit()
         ex.sess.remove()
         eq_(ex.sess.query(ex.Person).first().name_first, 'randall')
+
+    def test_with_validation(self):
+        p = ex.Person(
+            name_first = u'ughhh',
+            name_last = u'Obama',
+            family_role = u'father',
+            nullable_but_required = u'ab',
+        )
+        ex.sess.add(p)
+        try:
+            ex.sess.commit()
+            assert False
+        except ValidationError, e:
+            ex.sess.rollback()
+            eq_(len(e.invalid_instances), 1)
+            expect = {'name_first': [u'must be "President"']}
+            eq_(p.validation_errors, expect)
+
+    def test_with_no_entity_linkers(self):
+        c = ex.Customer(
+            name = u'Sam',
+        )
+        ex.sess.add(c)
+        try:
+            ex.sess.commit()
+            assert False
+        except ValidationError, e:
+            ex.sess.rollback()
+            eq_(len(e.invalid_instances), 1)
+            expect = {'name': [u'Sam not allowed']}
+            eq_(c.validation_errors, expect)
