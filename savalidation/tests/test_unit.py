@@ -71,3 +71,18 @@ class TestWeakReferences(object):
         except EntityRefMissing:
             pass
 
+class TestBeforeFlushHelper(object):
+    def setUp(self):
+        ex.sess.query(ex.Person).delete()
+
+    def test_before_flush(self):
+        p = ex.Person(
+            name_first = u'randy',
+            name_last = u'foo',
+            family_role = u'father',
+            nullable_but_required = u'ab',
+        )
+        ex.sess.add(p)
+        ex.sess.commit()
+        ex.sess.remove()
+        eq_(ex.sess.query(ex.Person).first().name_first, 'randall')
