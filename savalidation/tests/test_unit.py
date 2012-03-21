@@ -97,12 +97,25 @@ class TestBeforeFlushHelper(object):
         ex.sess.add(p)
         try:
             ex.sess.commit()
-            assert False
+            assert False, 'exepcted exception'
         except ValidationError, e:
             ex.sess.rollback()
             eq_(len(e.invalid_instances), 1)
             expect = {'name_first': [u'must be "President"']}
             eq_(p.validation_errors, expect)
+
+    def test_only_called_for_before_flush(self):
+        p = ex.Person(
+            name_first = u'f',
+            name_last = u'l',
+            family_role = u'father',
+            nullable_but_required = u'ab',
+        )
+        ex.sess.add(p)
+        ex.sess.commit()
+        # make sure the validator only fired once.  This makes sure we don't
+        # fire before_flush methods for after_flush too
+        eq_(p.enforce_president_call_count, 1)
 
     def test_with_no_entity_linkers(self):
         c = ex.Customer(

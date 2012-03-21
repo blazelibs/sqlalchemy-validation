@@ -78,6 +78,11 @@ class Person(Base, ValidationMixin):
 
     @before_flush
     def enforce_president(self):
+        try:
+            self.enforce_president_call_count += 1
+        except AttributeError:
+            self.enforce_president_call_count = 1
+
         if self.name_last == u'Obama' and self.name_first != 'President':
             self.add_validation_error('name_first', 'must be "President"')
 

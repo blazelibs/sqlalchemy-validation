@@ -130,14 +130,15 @@ class _ValidationHelper(object):
         self.errors[field_name].append(msg)
 
     def validate(self, type):
+        if type == 'before_flush':
+            self.clear_errors()
+            self.trigger_before_flush_methods()
+
         # if there were no validators setup, then just return
         if not self.entity_linkers:
             # make sure we return errors here since a before_flush() method
             # could have added validation errors
             return self.errors
-
-        if type == 'before_flush':
-            self.clear_errors()
 
         fe_val_schema, fe_conv_schema = self.create_fe_schemas(type)
         self.validate_fe_schema(fe_val_schema, False)
@@ -230,8 +231,6 @@ class _EventHandler(object):
         for instance in insts_to_val:
             if instance in insts_with_err:
                 continue
-
-            instance._sav.trigger_before_flush_methods()
 
             errors = instance._sav.validate(type)
             if errors:
