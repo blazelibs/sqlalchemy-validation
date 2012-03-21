@@ -1,3 +1,4 @@
+import mock
 from nose.plugins.skip import SkipTest
 from nose.tools import eq_, raises
 import sqlalchemy.exc as saexc
@@ -183,6 +184,13 @@ class TestPerson(object):
         except ValidationError, e:
             expect = {'nullable_but_required': [u'Please enter a value']}
             eq_(f2.validation_errors, expect)
+
+    @mock.patch('savalidation.tests.examples.Person.get')
+    def test_before_flush_decorator_and_mocked_methods(self, m_get):
+        p = ex.Person(name_first=u'f1', name_last=u'l1', family_role=u'father', nullable_but_required=u'a')
+        ex.sess.add(p)
+        ex.sess.commit()
+        eq_(m_get.call_count, 0)
 
 class TestTypes(object):
 
