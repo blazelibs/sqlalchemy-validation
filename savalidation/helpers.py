@@ -7,5 +7,5 @@ def before_flush(f):
 
         This decorated methods will be called before validation takes place.
     """
-    f._sav_before_flush = True
+    f._sav_before_flush = 'yes'
     return f

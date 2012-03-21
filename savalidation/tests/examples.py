@@ -81,6 +81,10 @@ class Person(Base, ValidationMixin):
         if self.name_last == u'Obama' and self.name_first != 'President':
             self.add_validation_error('name_first', 'must be "President"')
 
+    @classmethod
+    def get(cls, oid):
+        return sess.query(cls).get(oid)
+
 class IntegerType(Base, ValidationMixin):
     __tablename__ = 'IntegerType'
     id = sa.Column(sa.Integer, primary_key=True)

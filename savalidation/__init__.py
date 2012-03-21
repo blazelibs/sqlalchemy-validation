@@ -110,7 +110,10 @@ class _ValidationHelper(object):
 
     def init_before_flush_methods(self):
         for attr_name, attr_obj in self.entity.__class__.__dict__.iteritems():
-            if getattr(attr_obj, '_sav_before_flush', False):
+            # test for a value, not just the presence of the attribute to avoid
+            # collecting methods that have been mocked and will therefore
+            # have all attributes.
+            if getattr(attr_obj, '_sav_before_flush', False) == 'yes':
                 # don't want to get into trouble w/ strong references, so only
                 # keep a copy of the name of the attribute
                 self.before_flush_methods.append(attr_name)
