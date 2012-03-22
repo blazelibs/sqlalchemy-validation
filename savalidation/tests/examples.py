@@ -154,13 +154,7 @@ class Order2(Base, ValidationMixin):
     createdts = sa.Column(sa.DateTime, nullable=False, server_default=sasql.text('CURRENT_TIMESTAMP'))
 
     val.validates_constraints()
-    # if the value is None, the validation will be deferred until after a
-    # flush() is executed on the session.  Useful for default values and
-    # relations where the value doesn't show up as an attribute until a flush()
-    # is issues. NOTE: This only works when the DB doesn't issue exceptions
-    # for the value sent.  If you try to send NULL, to a non-nullable column,
-    # then you will get an IntegrityError.
-    val.validates_presence_of('customer_id', deferred=True)
+    val.validates_required('customer_id', sav_event='before_exec')
 
 
 class NoMixin(Base):

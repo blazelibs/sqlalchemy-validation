@@ -39,6 +39,26 @@ class EntityLinker(object):
         elvs.append((self.validator_cls, args, kwargs))
 entity_linker = EntityLinker
 
+class FEVMeta(object):
+    """
+        Wraps a formencode validator along with other meta information that
+        indicates how & when that validator is to be used.
+    """
+    ALL_EVENTS = 'before_flush', 'before_exec'
+
+    def __init__(self, fev, field_name=None, event='before_flush', is_converter=False):
+        if event not in self.ALL_EVENTS:
+            raise ValueError('got "{0}" for event, should be one of: {1}'.format(event, self.ALL_EVENTS))
+        self.fev = fev
+        self.field_name = field_name
+        self.event = event
+        self.is_converter = is_converter
+
+    def __repr__(self):
+        return '<FEVMeta: field_name={0}; event={1}; is_conv={2}; fev={3}'.format(
+            self.field_name, self.event, self.is_converter, self.fev
+        )
+
 class ValidatorBase(object):
     fe_validator = None
     default_kwargs = dict()
@@ -47,23 +67,12 @@ class ValidatorBase(object):
         self.entitycls = entity_cls
         self.args = args
         self.kwargs = kwargs
-        self.fe_field_validators = []
-        self.fe_entity_validators = []
         self.field_names = []
         self.fe_args = []
+        self.fev_metas = []
 
         self.split_field_names_from_fe_args()
         self.create_fe_validators()
-
-    def add_field_validator(self, field_name, fe_val):
-        if not hasattr(fe_val, '_sav_defer_on_none'):
-            fe_val._sav_defer_on_none = False
-        if not hasattr(fe_val, '_sav_convert_flag'):
-            fe_val._sav_convert_flag = False
-        self.fe_field_validators.append((field_name, fe_val))
-
-    def add_entity_validator(self, fe_val):
-        self.fe_entity_validators.append(fe_val)
 
     def split_field_names_from_fe_args(self):
         """
@@ -80,16 +89,30 @@ class ValidatorBase(object):
         self.fe_args.extend(self.args[index+1:])
 
     def create_fe_validators(self):
-        defer_flag = self.kwargs.pop('deferred', False)
         kwargs = self.default_kwargs.copy()
         kwargs.update(self.kwargs)
-        convert_flag = kwargs.pop('sv_convert', False)
+        convert_flag = kwargs.pop('sav_convert', kwargs.pop('sv_convert', False))
+        sav_event = kwargs.pop('sav_event', 'before_flush')
 
         for field_to_validate in self.field_names:
-            validator = self.fe_validator(*self.fe_args, **kwargs)
-            validator._sav_defer_on_none = defer_flag
-            validator._sav_convert_flag = convert_flag
-            self.add_field_validator(field_to_validate, validator)
+            self.create_fev_meta(self.fe_validator, field_to_validate, kwargs, sav_event, convert_flag)
+
+    def create_fev_meta(self, fev_cls, colname, fe_kwargs={}, sav_event='before_flush', convert_flag=False, auto_not_empty=True):
+        fe_kwargs = fe_kwargs.copy()
+        if auto_not_empty and self.sa_column_needs_not_empty(colname):
+            fe_kwargs['not_empty'] = True
+        fev = fev_cls(*self.fe_args, **fe_kwargs)
+        fev_meta = FEVMeta(fev, colname, sav_event, convert_flag)
+        self.fev_metas.append(fev_meta)
+
+    def sa_column_needs_not_empty(self, colname):
+        col = self.fetch_sa_column(colname)
+        if not col.nullable and not col.default and not col.server_default:
+            return True
+        return False
+
+    def fetch_sa_column(self, colname):
+        return self.entitycls.__mapper__.get_property(colname).columns[0]
 
     def arg_for_fe_validator(self, index, unknown_arg):
         return False
@@ -172,22 +195,24 @@ class _ValidatesConstraints(ValidatorBase):
 
             # validate lengths on String and Unicode types
             if validate_length and isinstance(col.type, sa.types.String):
-                self.add_field_validator(colname, fev.MaxLength(col.type.length))
+                fmeta = FEVMeta(fev.MaxLength(col.type.length), colname)
+                self.fev_metas.append(fmeta)
 
             # handle fields that are not nullable
             if validate_nullable and not col.nullable:
-                validator = formencode.FancyValidator(not_empty=True)
-                # some values only get populated after a flush, we tag these
-                # validators here
-                if col.default or col.foreign_keys or col.server_default:
-                    validator._sav_defer_on_none = True
-                self.add_field_validator(colname, validator)
+                if not col.default and not col.server_default:
+                    validator = formencode.FancyValidator(not_empty=True)
+                    event = 'before_flush'
+                    if col.foreign_keys:
+                        event = 'before_exec'
+                    fmeta = FEVMeta(validator, colname, event)
+                    self.fev_metas.append(fmeta)
 
             # data-type validation
             if validate_type:
                 for sa_type, fe_validator in SA_FORMENCODE_MAPPING.iteritems():
                     if isinstance(col.type, sa_type):
-                        self.add_field_validator(colname, fe_validator)
+                        self.create_fev_meta(fe_validator, colname, auto_not_empty=False)
                         break
 
 def formencode_factory(fevalidator, **kwargs):

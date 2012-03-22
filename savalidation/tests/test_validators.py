@@ -1,7 +1,9 @@
+import mock
 from nose.tools import eq_
 import sqlalchemy.exc as saexc
 import examples as ex
 from savalidation import ValidationError
+import savalidation.validators as sav
 
 class TestValidators(object):
 
@@ -98,3 +100,21 @@ class TestValidators(object):
             ex.sess.rollback()
             expect = {'url': [u'That is not a valid URL']}
             eq_(e.invalid_instances[0].validation_errors, expect)
+
+class TestValidatorBase(object):
+
+    @mock.patch('savalidation.validators.ValidatorBase.fe_validator')
+    def test_convert_flag_from_entity_linker_arg(self, m_fe_validator):
+        vb = sav.ValidatorBase(ex.ConversionTester, 'val2', sv_convert=True)
+        m_fe_validator.assert_called_once_with()
+        eq_(len(vb.fev_metas), 1)
+        eq_(vb.fev_metas[0].is_converter, True)
+
+    @mock.patch('savalidation.validators.ValidatorBase.fe_validator')
+    @mock.patch('savalidation.validators.ValidatorBase.default_kwargs', wraps={'sv_convert': True})
+    def test_convert_flag_from_formencode_factory(self, m_default_kwargs, m_fe_validator):
+        vb = sav.ValidatorBase(ex.ConversionTester, 'val3')
+        m_fe_validator.assert_called_once_with()
+        eq_(len(vb.fev_metas), 1)
+        eq_(vb.fev_metas[0].is_converter, True)
+

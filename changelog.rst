@@ -17,6 +17,12 @@ This release contains some **BC BREAKS**.
 * the Formencode state object sent to a validator's method has changed the
   "instance" attribute to be "entity."
 * add before_flush() helper to decorate entity instance methods
+* got rid of after_flush validation.  Instead, before_insert/before_update events
+    can now be used to validate non-nullable foreign keys.
+* got rid of validation support for a column's default and server_default
+    values (b/c it required after_flush validation)
+* formencode schemas are now only created once per class, not per instance,
+    boosting performance.
 
 0.1.5 released 2011-06-11
 =========================

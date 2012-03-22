@@ -269,9 +269,9 @@ class TestOrders(object):
         ex.sess.add(o)
         ex.sess.add(c1)
         ex.sess.commit()
-        assert o.customer is c1
+        #assert o.customer is c1
 
-    def test_fk_failure(self):
+    def test_fk_type_checking(self):
         o = ex.Order(customer_id = 'foobar')
         ex.sess.add(o)
         try:
@@ -281,14 +281,17 @@ class TestOrders(object):
             ex.sess.rollback()
             expect = {'customer_id': [u'Please enter an integer value']}
             eq_(o.validation_errors, expect)
-        o.customer_id = None
+
+    def test_fk_not_null_checking(self):
+        o = ex.Order()
         ex.sess.add(o)
-        # DB constraint preventing NULL will fail when flushed
         try:
             ex.sess.commit()
-        except Exception, e:
-            if 'IntegrityError' not in str(e):
-                raise
+            assert False
+        except ValidationError, e:
+            ex.sess.rollback()
+            expect = {'customer_id': [u'Please enter a value']}
+            eq_(o.validation_errors, expect)
 
     def test_order2_with_reference(self):
         c1 = ex.Customer(name='ts1')
