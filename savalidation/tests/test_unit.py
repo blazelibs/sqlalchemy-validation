@@ -130,3 +130,14 @@ class TestBeforeFlushHelper(object):
             eq_(len(e.invalid_instances), 1)
             expect = {'name': [u'Sam not allowed']}
             eq_(c.validation_errors, expect)
+
+
+class TestFESchemas(object):
+
+    def test_convert_flag(self):
+        ex.ConversionTester()
+        schemas = ex.ConversionTester._sav_fe_schemas
+        # validation
+        eq_(set(schemas['before_flush'][0].fields.keys()), set(['val1', 'val4']))
+        # conversion
+        eq_(set(schemas['before_flush'][1].fields.keys()), set(['val2', 'val3']))
