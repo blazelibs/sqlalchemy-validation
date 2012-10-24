@@ -1,7 +1,7 @@
 Change Log
 ----------
 
-0.2.0 released ???
+0.2.0 released 2012-10-24
 =========================
 
 This release contains some **BC BREAKS**.
