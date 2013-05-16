@@ -1,10 +1,10 @@
 Change Log
 ----------
 
-0.2.1 released ???
+0.2.1 released 2013-05-15
 =========================
 
-*
+* fixed issue #6 - adjustment to the version of python-dateutil required.
 
 0.2.0 released 2012-10-24
 =========================
