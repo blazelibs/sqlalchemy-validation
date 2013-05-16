@@ -7,6 +7,7 @@ class DevelopCmd(STDevelopCmd):
         # add in requirements for testing only when using the develop command
         self.distribution.install_requires.extend([
             'mock',
+            'nose',
         ])
         STDevelopCmd.run(self)
 
@@ -40,8 +41,7 @@ setup(
     cmdclass = {'develop': DevelopCmd},
     install_requires=[
         'SQLAlchemy>=0.7',
-        # version 2 is out for PY 3, but the notes say to use 1.x for PY 2.x
-        'python-dateutil<=1.9.999',
+        'python-dateutil',
         'FormEncode>=1.2'
     ],
 )
