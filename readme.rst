@@ -1,5 +1,5 @@
 Introduction
----------------------
+------------
 
 SAValidation facilitates Active Record like validation on SQLAlchemy declarative model
 objects.
@@ -118,21 +118,22 @@ The following is a snippet from the examples.py file:
 See more examples in the tests directory of the distribution.
 
 Installing & Testing Source
---------------------------
+---------------------------
 
 (this is one way, there are others)
 
 .. code-block:: bash
 
-#. create a virtualenv
-#. activate the virtualenv
-#  pip install -e "hg+http://bitbucket.org/blazlibs/sqlalchemy-validation#egg=savlidation-dev"
-#. pip install nose
-#. cd src/savalidation/savalidation
-#. nosetests
+    # create a virtualenv
+    # activate the virtualenv
+
+    $ pip install -e "hg+http://bitbucket.org/blazlibs/sqlalchemy-validation#egg=savlidation-dev"
+    $ pip install nose
+    $ cd src/savalidation/savalidation
+    $ nosetests
 
 Questions & Comments
----------------------
+--------------------
 
 Please visit: http://groups.google.com/group/blazelibs
 
@@ -151,14 +152,14 @@ slipped through violates a DB constraint.  In that case, a true DB exception
 will be raised.
 
 Dependencies
---------------
+------------
  * SQLAlchemy > 0.7
  * FormEncode
  * python-dateutil (for date/time converters)
  * Nose (if you want to run the tests)
 
 Credits
----------
+-------
 
 This project borrows code and ideas from:
 
@@ -166,6 +167,6 @@ This project borrows code and ideas from:
 * `Elixir <http://elixir.ematia.de/>`_
 
 Current Status
----------------
+--------------
 
 The code itself seems stable, but the API may change in the future.
