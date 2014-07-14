@@ -153,10 +153,11 @@ will be raised.
 
 Dependencies
 ------------
- * SQLAlchemy > 0.7
- * FormEncode
- * python-dateutil (for date/time converters)
- * Nose (if you want to run the tests)
+
+* SQLAlchemy > 0.7
+* FormEncode
+* python-dateutil (for date/time converters)
+* Nose (if you want to run the tests)
 
 Credits
 -------
