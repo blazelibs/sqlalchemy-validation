@@ -12,9 +12,11 @@ The home page is currently the `bitbucket repository
 <http://bitbucket.org/blazelibs/sqlalchemy-validation/>`_.
 
 Usage Example
----------------------
+-------------
 
-The following is a snippet from the examples.py file::
+The following is a snippet from the examples.py file:
+
+.. code-block:: python
 
     from datetime import datetime
     import formencode
@@ -116,16 +118,18 @@ The following is a snippet from the examples.py file::
 See more examples in the tests directory of the distribution.
 
 Installing & Testing Source
------------------------------
+--------------------------
 
 (this is one way, there are others)
 
+.. code-block:: bash
+
 #. create a virtualenv
 #. activate the virtualenv
-#. ``pip install -e "hg+http://bitbucket.org/blazlibs/sqlalchemy-validation#egg=savlidation-dev"``
-#. ``pip install nose``
-#. ``cd src/savalidation/savalidation``
-#. ``nosetests``
+#  pip install -e "hg+http://bitbucket.org/blazlibs/sqlalchemy-validation#egg=savlidation-dev"
+#. pip install nose
+#. cd src/savalidation/savalidation
+#. nosetests
 
 Questions & Comments
 ---------------------
