@@ -125,6 +125,13 @@ class DateTimeConverter(fev.FancyValidator):
             if 'unknown string format' not in str(e):
                 raise
             raise formencode.Invalid('Unknown date/time string "%s"' % value, value, state)
+        except TypeError, e:
+            # can probably be removed if this ever gets fixed:
+            # https://bugs.launchpad.net/dateutil/+bug/1257985
+            if "'NoneType' object is not iterable" not in str(e):
+                raise
+            raise formencode.Invalid('Unknown date/time string "%s"' % value, value, state)
+
 
 @entity_linker
 class _ValidatesPresenceOf(ValidatorBase):
