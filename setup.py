@@ -40,7 +40,7 @@ setup(
     zip_safe=False,
     cmdclass = {'develop': DevelopCmd},
     install_requires=[
-        'SQLAlchemy>=0.7',
+        'SQLAlchemy>=0.7.6',
         'python-dateutil',
         'FormEncode>=1.2'
     ],
