@@ -5,6 +5,7 @@ Change Log
 =========================
 
 * fix bug with .validates_constraints() and Text column types
+* watch_session() is no longer needed
 
 0.2.1 released 2013-05-15
 =========================
