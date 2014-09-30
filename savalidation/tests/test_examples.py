@@ -312,6 +312,15 @@ class TestOrders(object):
             expect = {'customer_id': [u'Please enter a value']}
             eq_(o.validation_errors, expect)
 
+    def test_text_type(self):
+        c = ex.Customer(name='ts1')
+        # note is a Text column type, it needs to have a value for this test
+        ex.Order(customer=c, note='foo')
+        ex.sess.add(c)
+        ex.sess.commit()
+        # passing without an exception is the goal here.  We used to have a bug whe using a Text
+        # column type that would fail validation.
+
 class TestUnit(object):
 
     def tearDown(self):

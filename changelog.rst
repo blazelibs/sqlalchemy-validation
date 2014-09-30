@@ -4,7 +4,7 @@ Change Log
 0.2.2 released ???
 =========================
 
-* 
+* fix bug with .validates_constraints() and Text column types
 
 0.2.1 released 2013-05-15
 =========================

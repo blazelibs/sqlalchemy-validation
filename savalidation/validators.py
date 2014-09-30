@@ -200,8 +200,10 @@ class _ValidatesConstraints(ValidatorBase):
             if colname in excludes or col.primary_key:
                 continue
 
-            # validate lengths on String and Unicode types
-            if validate_length and isinstance(col.type, sa.types.String):
+            # validate lengths on String and Unicode types, but not Text b/c it shouldn't have a
+            # length
+            if validate_length and isinstance(col.type, sa.types.String) \
+                    and not isinstance(col.type, sa.types.Text):
                 fmeta = FEVMeta(fev.MaxLength(col.type.length), colname)
                 self.fev_metas.append(fmeta)
 

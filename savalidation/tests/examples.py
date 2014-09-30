@@ -143,6 +143,7 @@ class Order(Base, ValidationMixin):
     id = sa.Column(sa.Integer, primary_key=True)
     customer_id = sa.Column(sa.Integer, sa.ForeignKey(Customer.id), nullable=False)
     createdts = sa.Column(sa.DateTime, nullable=False, default=datetime.now, server_default=sasql.text('CURRENT_TIMESTAMP'))
+    note = sa.Column(sa.Text)
 
     val.validates_constraints()
 
