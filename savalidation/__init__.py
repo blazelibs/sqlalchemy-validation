@@ -4,13 +4,12 @@ import weakref
 
 import formencode
 import sqlalchemy as sa
-import sqlalchemy.ext.declarative as sadec
 import sqlalchemy.orm as saorm
 
 from savalidation._internal import getversion
-from savalidation.validators import _ELV
 
 VERSION = getversion()
+
 
 class ValidationError(Exception):
     """ issued when models are flushed but have validation errors """
@@ -21,12 +20,12 @@ class ValidationError(Exception):
             fields_with_errors = []
             fields = instance._sav.errors
             model = str(instance)
-            field_errors = {}
             for fname, errors in fields.iteritems():
                 fields_with_errors.append('[%s: "%s"]' % (fname, '"; "'.join(errors)))
             instance_errors.append('%s %s' % (model, '; '.join(fields_with_errors)))
         msg = 'validation error(s): %s' % '; '.join(instance_errors)
         Exception.__init__(self, msg)
+
 
 class EntityRefMissing(Exception):
     """
@@ -43,9 +42,11 @@ class EntityRefMissing(Exception):
         to the entity and is in the before_flush or after_flush state.
     """
 
+
 class _FEState(object):
     def __init__(self, entity):
         self.entity = entity
+
 
 class _ValidationHelper(object):
     """
@@ -64,7 +65,7 @@ class _ValidationHelper(object):
         entity = self.entref()
         if entity is None:
             raise EntityRefMissing('A request for the entity occured, but that'
-                ' object is no longer available through its weak reference.')
+                                   ' object is no longer available through its weak reference.')
         return entity
 
     def __getstate__(self):
@@ -112,7 +113,7 @@ class _ValidationHelper(object):
             return
         idict = {}
         for colname in self.entity._sav_column_names():
-            if schema.fields.has_key(colname):
+            if colname in schema.fields:
                 idict[colname] = getattr(self.entity, colname, None)
         try:
             # print '-------------', idict, schema, flag_convert, self.entity
@@ -136,6 +137,7 @@ class _ValidationHelper(object):
                 has_error = True
         return has_error
 
+
 class ValidationMixin(object):
     _sav_do_validation = True
 
@@ -151,8 +153,8 @@ class ValidationMixin(object):
 
     @classmethod
     def _sav_column_names(self):
-        return [p.key for p in self.__mapper__.iterate_properties \
-                                      if isinstance(p, saorm.ColumnProperty)]
+        return [p.key for p in self.__mapper__.iterate_properties
+                if isinstance(p, saorm.ColumnProperty)]
 
     def to_dict(self, exclude=[]):
         data = dict([(name, getattr(self, name))
@@ -213,7 +215,7 @@ class ValidationMixin(object):
 
     @classmethod
     def _sav_create_fe_schema(cls, fev_metas, for_event, for_conversion):
-        schema = formencode.Schema(allow_extra_fields = True)
+        schema = formencode.Schema(allow_extra_fields=True)
         field_validators = defaultdict(list)
         for fevm in fev_metas:
             if fevm.event == for_event and fevm.is_converter == for_conversion:
@@ -229,6 +231,7 @@ class ValidationMixin(object):
             instance._sav.trigger_before_flush_methods()
 
         return instance._sav.run_event_schemas(type)
+
 
 class _EventHandler(object):
 
@@ -247,7 +250,7 @@ class _EventHandler(object):
     @staticmethod
     def handle_insert(mapper, connection, target):
         if hasattr(target, '_sav_validate'):
-            errors = target._sav_validate(target, 'before_exec')
+            target._sav_validate(target, 'before_exec')
 
     @staticmethod
     @sa.event.listens_for(saorm.mapper, 'before_insert')
@@ -291,12 +294,8 @@ class _EventHandler(object):
         for ent in ents_to_validate:
             ent._sav_validate(ent, 'before_flush')
 
-# until this bug gets fixed & released:
-#   http://www.sqlalchemy.org/trac/ticket/2424
-# these events will only work if this module is instantiated BEFORE your session
-# is created.  If that is not the case, then call watch_session() with your
-# session object and the events will be registered correctly.
 sa.event.listen(saorm.Session, 'before_flush', _EventHandler.before_flush)
+
 
 def watch_session(sess):
     message = 'watch_session() is no longer needed.  The SQLAlchemy bug that required its usage' \
