@@ -1,6 +1,7 @@
 Change Log
 ----------
 
+
 0.3.1 released <in devel>
 =========================
 
@@ -11,6 +12,7 @@ Change Log
 
 * fix bug with .validates_constraints() and Text column types
 * watch_session() is no longer needed, SQLAlchemy >= 0.7.6 required
+* now beta quality: been used in production a long time, but not used widely
 
 0.2.1 released 2013-05-15
 =========================
