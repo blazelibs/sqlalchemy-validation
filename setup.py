@@ -2,6 +2,7 @@ import os
 from setuptools import setup, find_packages
 from setuptools.command.develop import develop as STDevelopCmd
 
+
 class DevelopCmd(STDevelopCmd):
     def run(self):
         # add in requirements for testing only when using the develop command
@@ -38,7 +39,7 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     zip_safe=False,
-    cmdclass = {'develop': DevelopCmd},
+    cmdclass={'develop': DevelopCmd},
     install_requires=[
         'SQLAlchemy>=0.7.6',
         'python-dateutil',
