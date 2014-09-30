@@ -1,5 +1,5 @@
 from collections import defaultdict
-import types
+import warnings
 import weakref
 
 import formencode
@@ -299,4 +299,6 @@ class _EventHandler(object):
 sa.event.listen(saorm.Session, 'before_flush', _EventHandler.before_flush)
 
 def watch_session(sess):
-    sa.event.listen(sess, 'before_flush', _EventHandler.before_flush)
+    message = 'watch_session() is no longer needed.  The SQLAlchemy bug that required its usage' \
+              ' is fixed.'
+    warnings.warn(message, DeprecationWarning, 2)
