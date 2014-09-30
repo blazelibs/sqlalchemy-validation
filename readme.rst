@@ -42,10 +42,6 @@ The following is a snippet from the examples.py file:
 
     sess = Session
 
-    # we only need watch_session() until this bug fix gets released:
-    # http://www.sqlalchemy.org/trac/ticket/2424#comment:5
-    watch_session(sess)
-
     class Family(Base, ValidationMixin):
         __tablename__ = 'families'
 
