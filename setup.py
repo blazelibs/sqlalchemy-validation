@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import os
 from setuptools import setup, find_packages
 from setuptools.command.develop import develop as STDevelopCmd
@@ -30,6 +31,7 @@ setup(
         'Programming Language :: Python :: 2.5',
         'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
         'Topic :: Database',
         ],
     author='Randy Syring',
@@ -43,6 +45,7 @@ setup(
     install_requires=[
         'SQLAlchemy>=0.7.6',
         'python-dateutil',
-        'FormEncode>=1.2'
+        'FormEncode>=1.2',
+        'six',
     ],
 )

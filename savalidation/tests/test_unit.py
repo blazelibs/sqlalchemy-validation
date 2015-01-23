@@ -1,5 +1,6 @@
+from __future__ import absolute_import
 try:
-    import cPickle as pickle
+    import six.moves.cPickle as pickle
 except ImportError:
     import pickle
 import gc
@@ -98,7 +99,7 @@ class TestBeforeFlushHelper(object):
         try:
             ex.sess.commit()
             assert False, 'exepcted exception'
-        except ValidationError, e:
+        except ValidationError as e:
             ex.sess.rollback()
             eq_(len(e.invalid_instances), 1)
             expect = {'name_first': [u'must be "President"']}
@@ -125,7 +126,7 @@ class TestBeforeFlushHelper(object):
         try:
             ex.sess.commit()
             assert False
-        except ValidationError, e:
+        except ValidationError as e:
             ex.sess.rollback()
             eq_(len(e.invalid_instances), 1)
             expect = {'name': [u'Sam not allowed']}

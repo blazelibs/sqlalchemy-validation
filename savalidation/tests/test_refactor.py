@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from datetime import datetime
 import formencode
 import sqlalchemy as sa
@@ -99,7 +100,7 @@ class TestStuff(object):
         try:
             sess.commit()
             assert False, 'exception expected'
-        except ValidationError, e:
+        except ValidationError as e:
             sess.rollback()
             expect = {'name': [u"Please enter a value"]}
             eq_(f1.validation_errors, expect)
@@ -110,7 +111,7 @@ class TestStuff(object):
         try:
             sess.commit()
             assert False
-        except ValidationError, e:
+        except ValidationError as e:
             sess.rollback()
             expect = {'customer_id': [u'Please enter a value']}
             eq_(o.validation_errors, expect)
@@ -121,7 +122,7 @@ class TestStuff(object):
         try:
             sess.commit()
             assert False
-        except ValidationError, e:
+        except ValidationError as e:
             sess.rollback()
             expect = {'ip1': ['Please enter a valid IP address (a.b.c.d)'],
                 'ip2': ['Please enter a valid IP address (a.b.c.d)']
@@ -139,7 +140,7 @@ class TestStuff(object):
         try:
             sess.commit()
             assert False
-        except ValidationError, e:
+        except ValidationError as e:
             sess.rollback()
             expect = {'ip1': ['Please enter a valid IP address (a.b.c.d)'],
                 'ip2': ['Please enter a valid IP address (a.b.c.d)']

@@ -1,7 +1,8 @@
+from __future__ import absolute_import
 import mock
 from nose.tools import eq_
 import sqlalchemy.exc as saexc
-import examples as ex
+from . import examples as ex
 from savalidation import ValidationError
 import savalidation.validators as sav
 
@@ -17,7 +18,7 @@ class TestValidators(object):
             ex.sess.add(so)
             ex.sess.commit()
             assert False
-        except ValidationError, e:
+        except ValidationError as e:
             ex.sess.rollback()
             expect = {'minlen': [u'Enter a value at least 20 characters long']}
             eq_(e.invalid_instances[0].validation_errors, expect)
@@ -33,7 +34,7 @@ class TestValidators(object):
             ex.sess.add(so)
             ex.sess.commit()
             assert False
-        except ValidationError, e:
+        except ValidationError as e:
             ex.sess.rollback()
             expect = {'minlen': [u'Enter a value at least 20 characters long']}
             eq_(e.invalid_instances[0].validation_errors, expect)
@@ -48,7 +49,7 @@ class TestValidators(object):
             ex.sess.add(so)
             ex.sess.commit()
             assert False
-        except ValidationError, e:
+        except ValidationError as e:
             ex.sess.rollback()
             expect = {'ipaddr': [u'Please enter a valid IP address (a.b.c.d)']}
             eq_(e.invalid_instances[0].validation_errors, expect)
@@ -64,7 +65,7 @@ class TestValidators(object):
             ex.sess.add(so)
             ex.sess.commit()
             assert False
-        except ValidationError, e:
+        except ValidationError as e:
             ex.sess.rollback()
             expect = {'ipaddr': [u'Please enter a valid IP address (a.b.c.d)']}
             eq_(e.invalid_instances[0].validation_errors, expect)
@@ -80,7 +81,7 @@ class TestValidators(object):
             ex.sess.add(so)
             ex.sess.commit()
             assert False
-        except ValidationError, e:
+        except ValidationError as e:
             ex.sess.rollback()
             expect = {'url': [u'You must provide a full domain name (like foobar.com)']}
             eq_(e.invalid_instances[0].validation_errors, expect)
@@ -96,7 +97,7 @@ class TestValidators(object):
             ex.sess.add(so)
             ex.sess.commit()
             assert False
-        except ValidationError, e:
+        except ValidationError as e:
             ex.sess.rollback()
             expect = {'url': [u'That is not a valid URL']}
             eq_(e.invalid_instances[0].validation_errors, expect)

@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from datetime import datetime
 import formencode
 import sqlalchemy as sa
@@ -8,6 +9,7 @@ import sqlalchemy.orm as saorm
 from savalidation import ValidationMixin, watch_session
 import savalidation.validators as val
 from savalidation.helpers import before_flush
+import six
 
 engine = sa.create_engine('sqlite://')
 #engine.echo = True
@@ -176,7 +178,7 @@ class SomeObj(Base, ValidationMixin):
 
 class ReverseConverter(formencode.api.FancyValidator):
     def _to_python(self, value, state):
-        if not isinstance(value, basestring):
+        if not isinstance(value, six.string_types):
             raise formencode.Invalid('Must be a string type', value, state)
         # this reverse a string or list...yah, I know, it looks funny
         return value[::-1]
