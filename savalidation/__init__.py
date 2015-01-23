@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from collections import defaultdict
 import warnings
 import weakref
@@ -7,6 +8,7 @@ import sqlalchemy as sa
 import sqlalchemy.orm as saorm
 
 from savalidation._internal import getversion
+import six
 
 VERSION = getversion()
 
@@ -20,7 +22,7 @@ class ValidationError(Exception):
             fields_with_errors = []
             fields = instance._sav.errors
             model = str(instance)
-            for fname, errors in fields.iteritems():
+            for fname, errors in six.iteritems(fields):
                 fields_with_errors.append('[%s: "%s"]' % (fname, '"; "'.join(errors)))
             instance_errors.append('%s %s' % (model, '; '.join(fields_with_errors)))
         msg = 'validation error(s): %s' % '; '.join(instance_errors)
@@ -121,8 +123,8 @@ class _ValidationHelper(object):
             if flag_convert:
                 self.entity.__dict__.update(processed)
             #print '----valid', processed
-        except formencode.Invalid, e:
-            for field_name, msg in e.unpack_errors().iteritems():
+        except formencode.Invalid as e:
+            for field_name, msg in six.iteritems(e.unpack_errors()):
                 self.add_error(field_name, msg)
             return True
         return False
@@ -204,7 +206,7 @@ class ValidationMixin(object):
             cls._sav_create_fe_schema(all_fev_metas, 'before_exec', True)
 
         # setup methods that have been decorated with the before_flush event
-        for attr_name, attr_obj in cls.__dict__.iteritems():
+        for attr_name, attr_obj in six.iteritems(cls.__dict__):
             # test for a value, not just the presence of the attribute to avoid
             # collecting methods that have been mocked and will therefore
             # have all attributes.
@@ -220,7 +222,7 @@ class ValidationMixin(object):
         for fevm in fev_metas:
             if fevm.event == for_event and fevm.is_converter == for_conversion:
                 field_validators[fevm.field_name].append(fevm.fev)
-        for fieldname, validators in field_validators.iteritems():
+        for fieldname, validators in six.iteritems(field_validators):
             schema.add_field(fieldname, formencode.compound.All(*validators))
         return schema
 
