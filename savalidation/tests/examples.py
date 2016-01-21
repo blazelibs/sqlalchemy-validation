@@ -174,7 +174,7 @@ class SomeObj(Base, ValidationMixin):
     val.validates_ipaddr('ipaddr')
     val.validates_url('url')
 
-class ReverseConverter(formencode.api.FancyValidator):
+class ReverseConverter(val.BaseValidator):
     def _to_python(self, value, state):
         if not isinstance(value, basestring):
             raise formencode.Invalid('Must be a string type', value, state)

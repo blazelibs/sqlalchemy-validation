@@ -242,8 +242,13 @@ class TestTypes(object):
             ex.sess.commit()
             assert False, 'expected exception'
         except ValidationError, e:
-            expect = {'fld2': ['Unknown date/time string "baz"'], 'fld': [u'Please enter the date in the form mm/dd/yyyy'], 'fld3': [u'You must enter minutes (after a :)']}
-            eq_(inst.validation_errors, expect)
+            expect = {
+                'fld2': ['Unknown date/time string "baz"'],
+                'fld': ['Please enter the date in the form mm/dd/yyyy'],
+                'fld3': ['You must enter minutes (after a :)']
+            }
+            for key, msgs in expect.iteritems():
+                eq_(map(lambda x: x.lower(), inst.validation_errors[key]), map(str.lower, msgs))
 
 class TestOrders(object):
 

@@ -117,12 +117,26 @@ class ValidatorBase(object):
     def arg_for_fe_validator(self, index, unknown_arg):
         return False
 
-class DateTimeConverter(fev.FancyValidator):
+
+class BaseValidator(fev.FancyValidator):
+    def __classinit__(cls, new_attrs):
+        depricated_methods = getattr(cls, '_deprecated_methods', None) or \
+            new_attrs.get('_deprecated_methods')
+        if depricated_methods is not None:
+            for old, new in depricated_methods:
+                if old in new_attrs:
+                    method = new_attrs.pop(old)
+                    setattr(cls, new, method)
+                    new_attrs[new] = method
+        return fev.FancyValidator.__classinit__(cls, new_attrs)
+
+
+class DateTimeConverter(BaseValidator):
     def _to_python(self, value, state):
         try:
             return parse(value)
         except ValueError, e:
-            if 'unknown string format' not in str(e):
+            if 'unknown string format' not in str(e).lower():
                 raise
             raise formencode.Invalid('Unknown date/time string "%s"' % value, value, state)
         except TypeError, e:
