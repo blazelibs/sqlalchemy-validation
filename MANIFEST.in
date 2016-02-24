@@ -1,0 +1,3 @@
+recursive-include savalidation *
+recursive-exclude savalidation *.pyc
+include *.rst *.txt
