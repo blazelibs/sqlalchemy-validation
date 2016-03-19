@@ -171,6 +171,7 @@ class SomeObj(Base, ValidationMixin):
 
     prec1 = sa.Column(sa.Numeric(10, 2))
     prec2 = sa.Column(sa.Numeric(5, 0))
+    prec3 = sa.Column(sa.Numeric(5, 4))
 
     val.validates_constraints()
     val.validates_minlen('minlen', 20)
