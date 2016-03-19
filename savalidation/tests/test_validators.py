@@ -125,6 +125,9 @@ class TestValidators(object):
         ex.sess.add(ex.SomeObj(prec1='99999999.9900'))
         ex.sess.commit()
 
+        ex.sess.add(ex.SomeObj(prec3='1.00010'))
+        ex.sess.commit()
+
         try:
             ex.sess.add(ex.SomeObj(prec1='0.001'))
             ex.sess.commit()
