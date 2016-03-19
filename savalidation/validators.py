@@ -57,7 +57,7 @@ class NumericValidator(BaseValidator):
         quant = Decimal('1') / (Decimal('10') ** self.prec) if self.prec else Decimal('0')
         if value.quantize(quant) != value:
             raise formencode.Invalid(
-                'Please enter a value with {} or fewer decimal places'.format(self.prec),
+                'Please enter a number with {} or fewer decimal places'.format(self.prec),
                 state, value
             )
 
