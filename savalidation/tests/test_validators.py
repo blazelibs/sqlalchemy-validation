@@ -135,7 +135,7 @@ class TestValidators(object):
         except ValidationError as e:
             ex.sess.rollback()
             eq_(e.invalid_instances[0].validation_errors,
-                {'prec1': ['Please enter a value with 2 or fewer decimal places']})
+                {'prec1': ['Please enter a number with 2 or fewer decimal places']})
 
         try:
             ex.sess.add(ex.SomeObj(prec1='abcd'))
@@ -156,7 +156,7 @@ class TestValidators(object):
         except ValidationError as e:
             ex.sess.rollback()
             eq_(e.invalid_instances[0].validation_errors,
-                {'prec2': ['Please enter a value with 0 or fewer decimal places']})
+                {'prec2': ['Please enter a number with 0 or fewer decimal places']})
 
 
 class TestValidatorBase(object):
