@@ -13,30 +13,46 @@ from savalidation._internal import is_iterable
 _ELV = '_sav_entity_linkers'
 
 
-class NumericValidator(formencode.validators.Number):
+class BaseValidator(fev.FancyValidator):
+    def __classinit__(cls, new_attrs):
+        depricated_methods = getattr(cls, '_deprecated_methods', None) or \
+            new_attrs.get('_deprecated_methods')
+        if depricated_methods is not None:
+            for old, new in depricated_methods:
+                if old in new_attrs:
+                    method = new_attrs.pop(old)
+                    setattr(cls, new, method)
+                    new_attrs[new] = method
+        return fev.FancyValidator.__classinit__(cls, new_attrs)
+
+
+class NumericValidator(BaseValidator):
     def __init__(self, places, prec):
         self.places = places
         self.prec = prec
         super(NumericValidator, self).__init__()
 
-    def _convert_to_python(self, value, state):
+    def _to_python(self, value, state):
         try:
             return Decimal(value)
         except DecimalException:
-            raise formencode.Invalid(self.message('number', state), value, state)
+            raise formencode.Invalid('Please enter a number', value, state)
 
-    def _validate_python(self, value, state):
-        super(NumericValidator, self)._validate_python(value, state)
-        if self.places is None or self.prec is None:
+    def validate_python(self, value, state):
+        super(BaseValidator, self).validate_python(value, state)
+        if value is None or self.places is None or self.prec is None:
             return
         max_before_point = self.places - self.prec
         if value.adjusted() + 1 > max_before_point:
             max_val = '{}.{}'.format('9' * max_before_point, '9' * self.prec)
             if value >= 0:
-                raise formencode.Invalid(self.message('tooHigh', state, max=max_val), state, value)
+                raise formencode.Invalid(
+                    'Please enter a number that is {} or smaller'.format(max_val), state, value
+                )
             else:
-                raise formencode.Invalid(self.message('tooLow', state, min='-' + max_val),
-                                         state, value)
+                raise formencode.Invalid(
+                    'Please enter a number that is -{} or greater'.format(max_val), state, value
+                )
 
         quant = Decimal('1') / (Decimal('10') * self.prec) if self.prec else Decimal('0')
         if value.quantize(quant) != value:
@@ -150,19 +166,6 @@ class ValidatorBase(object):
 
     def arg_for_fe_validator(self, index, unknown_arg):
         return False
-
-
-class BaseValidator(fev.FancyValidator):
-    def __classinit__(cls, new_attrs):
-        depricated_methods = getattr(cls, '_deprecated_methods', None) or \
-            new_attrs.get('_deprecated_methods')
-        if depricated_methods is not None:
-            for old, new in depricated_methods:
-                if old in new_attrs:
-                    method = new_attrs.pop(old)
-                    setattr(cls, new, method)
-                    new_attrs[new] = method
-        return fev.FancyValidator.__classinit__(cls, new_attrs)
 
 
 class DateTimeConverter(BaseValidator):
