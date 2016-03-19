@@ -101,6 +101,61 @@ class TestValidators(object):
             expect = {'url': [u'That is not a valid URL']}
             eq_(e.invalid_instances[0].validation_errors, expect)
 
+    def test_numeric(self):
+        ex.sess.add(ex.SomeObj(prec1='99999999.99'))
+        ex.sess.commit()
+        try:
+            ex.sess.add(ex.SomeObj(prec1='100000000.00'))
+            ex.sess.commit()
+            assert False
+        except ValidationError as e:
+            ex.sess.rollback()
+            eq_(e.invalid_instances[0].validation_errors,
+                {'prec1': ['Please enter a number that is 99999999.99 or smaller']})
+
+        try:
+            ex.sess.add(ex.SomeObj(prec1='-100000000.00'))
+            ex.sess.commit()
+            assert False
+        except ValidationError as e:
+            ex.sess.rollback()
+            eq_(e.invalid_instances[0].validation_errors,
+                {'prec1': ['Please enter a number that is -99999999.99 or greater']})
+
+        ex.sess.add(ex.SomeObj(prec1='99999999.9900'))
+        ex.sess.commit()
+
+        try:
+            ex.sess.add(ex.SomeObj(prec1='0.001'))
+            ex.sess.commit()
+            assert False
+        except ValidationError as e:
+            ex.sess.rollback()
+            eq_(e.invalid_instances[0].validation_errors,
+                {'prec1': ['Please enter a value with 2 or fewer decimal places']})
+
+        try:
+            ex.sess.add(ex.SomeObj(prec1='abcd'))
+            ex.sess.commit()
+            assert False
+        except ValidationError as e:
+            ex.sess.rollback()
+            eq_(e.invalid_instances[0].validation_errors,
+                {'prec1': ['Please enter a number']})
+
+        ex.sess.add(ex.SomeObj(prec2='99999'))
+        ex.sess.add(ex.SomeObj(prec2='1.0'))
+        ex.sess.commit()
+        try:
+            ex.sess.add(ex.SomeObj(prec2='0.1'))
+            ex.sess.commit()
+            assert False
+        except ValidationError as e:
+            ex.sess.rollback()
+            eq_(e.invalid_instances[0].validation_errors,
+                {'prec2': ['Please enter a value with 0 or fewer decimal places']})
+
+
 class TestValidatorBase(object):
 
     @mock.patch('savalidation.validators.ValidatorBase.fe_validator')
