@@ -1,3 +1,4 @@
+from decimal import Decimal, DecimalException
 import inspect
 import sys
 
@@ -11,10 +12,43 @@ from savalidation._internal import is_iterable
 
 _ELV = '_sav_entity_linkers'
 
+
+class NumericValidator(formencode.validators.Number):
+    def __init__(self, places, prec):
+        self.places = places
+        self.prec = prec
+        super(NumericValidator, self).__init__()
+
+    def _convert_to_python(self, value, state):
+        try:
+            return Decimal(value)
+        except DecimalException:
+            raise formencode.Invalid(self.message('number', state), value, state)
+
+    def _validate_python(self, value, state):
+        super(NumericValidator, self)._validate_python(value, state)
+        if self.places is None or self.prec is None:
+            return
+        max_before_point = self.places - self.prec
+        if value.adjusted() + 1 > max_before_point:
+            max_val = '{}.{}'.format('9' * max_before_point, '9' * self.prec)
+            if value >= 0:
+                raise formencode.Invalid(self.message('tooHigh', state, max=max_val), state, value)
+            else:
+                raise formencode.Invalid(self.message('tooLow', state, min='-' + max_val),
+                                         state, value)
+
+        quant = Decimal('1') / (Decimal('10') * self.prec) if self.prec else Decimal('0')
+        if value.quantize(quant) != value:
+            raise formencode.Invalid(
+                'Please enter a value with {} or fewer decimal places'.format(self.prec),
+                state, value
+            )
+
+
 # map a SA field type to a formencode validator for use in _ValidatesConstraints
 SA_FORMENCODE_MAPPING = {
     sa.types.Integer: formencode.validators.Int,
-    sa.types.Numeric: formencode.validators.Number,
 }
 
 class EntityLinker(object):
@@ -219,6 +253,10 @@ class _ValidatesConstraints(ValidatorBase):
             if validate_length and isinstance(col.type, sa.types.String) \
                     and not isinstance(col.type, sa.types.Text):
                 fmeta = FEVMeta(fev.MaxLength(col.type.length), colname)
+                self.fev_metas.append(fmeta)
+
+            if validate_type and isinstance(col.type, sa.types.Numeric):
+                fmeta = FEVMeta(NumericValidator(col.type.precision, col.type.scale), colname)
                 self.fev_metas.append(fmeta)
 
             # handle fields that are not nullable

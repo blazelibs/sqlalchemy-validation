@@ -169,6 +169,9 @@ class SomeObj(Base, ValidationMixin):
     ipaddr = sa.Column(sa.String(15))
     url = sa.Column(sa.String(50))
 
+    prec1 = sa.Column(sa.Numeric(10, 2))
+    prec2 = sa.Column(sa.Numeric(5, 0))
+
     val.validates_constraints()
     val.validates_minlen('minlen', 20)
     val.validates_ipaddr('ipaddr')
