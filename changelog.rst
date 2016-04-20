@@ -2,10 +2,10 @@ Change Log
 ----------
 
 
-0.3.2 released <in development>
+0.3.2 released 2016-04-20
 =========================
 
-* ?
+* validate precision and scale of numeric column values
 
 0.3.1 released 2016-02-23
 =========================
