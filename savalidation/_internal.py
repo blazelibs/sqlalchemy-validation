@@ -1,4 +1,6 @@
+from __future__ import absolute_import
 import os
+import six
 
 
 def getversion():
@@ -7,7 +9,7 @@ def getversion():
 
 
 def is_iterable(possible_iterable):
-    if isinstance(possible_iterable, basestring):
+    if isinstance(possible_iterable, six.string_types):
         return False
     try:
         iter(possible_iterable)

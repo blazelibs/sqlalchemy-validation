@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 from decimal import Decimal, DecimalException
 import inspect
 import sys
@@ -9,6 +11,7 @@ import formencode.national
 import sqlalchemy as sa
 
 from savalidation._internal import is_iterable
+import six
 
 _ELV = '_sav_entity_linkers'
 
@@ -172,11 +175,11 @@ class DateTimeConverter(BaseValidator):
     def _to_python(self, value, state):
         try:
             return parse(value)
-        except ValueError, e:
+        except ValueError as e:
             if 'unknown string format' not in str(e).lower():
                 raise
             raise formencode.Invalid('Unknown date/time string "%s"' % value, value, state)
-        except TypeError, e:
+        except TypeError as e:
             # can probably be removed if this ever gets fixed:
             # https://bugs.launchpad.net/dateutil/+bug/1257985
             if "'NoneType' object is not iterable" not in str(e):
@@ -274,7 +277,7 @@ class _ValidatesConstraints(ValidatorBase):
 
             # data-type validation
             if validate_type:
-                for sa_type, fe_validator in SA_FORMENCODE_MAPPING.iteritems():
+                for sa_type, fe_validator in six.iteritems(SA_FORMENCODE_MAPPING):
                     if isinstance(col.type, sa_type):
                         self.create_fev_meta(fe_validator, colname, auto_not_empty=False)
                         break
