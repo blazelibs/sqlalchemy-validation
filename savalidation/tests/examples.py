@@ -171,12 +171,16 @@ class SomeObj(Base, ValidationMixin):
     ipaddr = sa.Column(sa.String(15))
     url = sa.Column(sa.String(50))
 
+    prec1 = sa.Column(sa.Numeric(10, 2))
+    prec2 = sa.Column(sa.Numeric(5, 0))
+    prec3 = sa.Column(sa.Numeric(5, 4))
+
     val.validates_constraints()
     val.validates_minlen('minlen', 20)
     val.validates_ipaddr('ipaddr')
     val.validates_url('url')
 
-class ReverseConverter(formencode.api.FancyValidator):
+class ReverseConverter(val.BaseValidator):
     def _to_python(self, value, state):
         if not isinstance(value, six.string_types):
             raise formencode.Invalid('Must be a string type', value, state)

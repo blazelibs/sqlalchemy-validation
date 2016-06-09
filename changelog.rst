@@ -2,10 +2,20 @@ Change Log
 ----------
 
 
-0.3.1 released <in devel>
+0.3.3 released <in development>
 =========================
 
-*
+* ?
+
+0.3.2 released 2016-04-20
+=========================
+
+* validate precision and scale of numeric column values
+
+0.3.1 released 2016-02-23
+=========================
+
+* fix formencode compatibility, supports formencode 1.2 and 1.3
 
 0.3.0 released 2014-09-30
 =========================

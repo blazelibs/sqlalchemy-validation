@@ -1,4 +1,6 @@
 from __future__ import absolute_import
+
+from decimal import Decimal, DecimalException
 import inspect
 import sys
 
@@ -13,10 +15,59 @@ import six
 
 _ELV = '_sav_entity_linkers'
 
+
+class BaseValidator(fev.FancyValidator):
+    def __classinit__(cls, new_attrs):
+        depricated_methods = getattr(cls, '_deprecated_methods', None) or \
+            new_attrs.get('_deprecated_methods')
+        if depricated_methods is not None:
+            for old, new in depricated_methods:
+                if old in new_attrs:
+                    method = new_attrs.pop(old)
+                    setattr(cls, new, method)
+                    new_attrs[new] = method
+        return fev.FancyValidator.__classinit__(cls, new_attrs)
+
+
+class NumericValidator(BaseValidator):
+    def __init__(self, places, prec):
+        self.places = places
+        self.prec = prec
+        super(NumericValidator, self).__init__()
+
+    def _to_python(self, value, state):
+        try:
+            return Decimal(value)
+        except DecimalException:
+            raise formencode.Invalid('Please enter a number', value, state)
+
+    def validate_python(self, value, state):
+        super(BaseValidator, self).validate_python(value, state)
+        if value is None or self.places is None or self.prec is None:
+            return
+        max_before_point = self.places - self.prec
+        if value.adjusted() + 1 > max_before_point:
+            max_val = '{}.{}'.format('9' * max_before_point, '9' * self.prec)
+            if value >= 0:
+                raise formencode.Invalid(
+                    'Please enter a number that is {} or smaller'.format(max_val), state, value
+                )
+            else:
+                raise formencode.Invalid(
+                    'Please enter a number that is -{} or greater'.format(max_val), state, value
+                )
+
+        quant = Decimal('1') / (Decimal('10') ** self.prec) if self.prec else Decimal('0')
+        if value.quantize(quant) != value:
+            raise formencode.Invalid(
+                'Please enter a number with {} or fewer decimal places'.format(self.prec),
+                state, value
+            )
+
+
 # map a SA field type to a formencode validator for use in _ValidatesConstraints
 SA_FORMENCODE_MAPPING = {
     sa.types.Integer: formencode.validators.Int,
-    sa.types.Numeric: formencode.validators.Number,
 }
 
 class EntityLinker(object):
@@ -119,12 +170,13 @@ class ValidatorBase(object):
     def arg_for_fe_validator(self, index, unknown_arg):
         return False
 
-class DateTimeConverter(fev.FancyValidator):
+
+class DateTimeConverter(BaseValidator):
     def _to_python(self, value, state):
         try:
             return parse(value)
         except ValueError as e:
-            if 'unknown string format' not in str(e):
+            if 'unknown string format' not in str(e).lower():
                 raise
             raise formencode.Invalid('Unknown date/time string "%s"' % value, value, state)
         except TypeError as e:
@@ -207,6 +259,10 @@ class _ValidatesConstraints(ValidatorBase):
             if validate_length and isinstance(col.type, sa.types.String) \
                     and not isinstance(col.type, sa.types.Text):
                 fmeta = FEVMeta(fev.MaxLength(col.type.length), colname)
+                self.fev_metas.append(fmeta)
+
+            if validate_type and isinstance(col.type, sa.types.Numeric):
+                fmeta = FEVMeta(NumericValidator(col.type.precision, col.type.scale), colname)
                 self.fev_metas.append(fmeta)
 
             # handle fields that are not nullable
