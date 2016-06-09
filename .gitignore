@@ -1,0 +1,14 @@
+MANIFEST
+*.komodo*
+*.pyc
+*.egg-info
+dist/*
+stage/*
+.tox/*
+.coverage
+.cache/
+coverage.xml
+pytest-reports/
+htmlcov/
+docs/_build/*
+build/*
