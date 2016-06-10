@@ -4,14 +4,12 @@ try:
 except ImportError:
     import pickle
 import gc
-import weakref
 
-from nose.plugins.skip import SkipTest
-from nose.tools import eq_, raises
-import sqlalchemy.exc as saexc
+from nose.tools import eq_
 
 from savalidation import EntityRefMissing, ValidationError
 import savalidation.tests.examples as ex
+
 
 class TestWeakReferences(object):
 
@@ -72,16 +70,17 @@ class TestWeakReferences(object):
         except EntityRefMissing:
             pass
 
+
 class TestBeforeFlushHelper(object):
     def setUp(self):
         ex.sess.query(ex.Person).delete()
 
     def test_before_flush(self):
         p = ex.Person(
-            name_first = u'randy',
-            name_last = u'foo',
-            family_role = u'father',
-            nullable_but_required = u'ab',
+            name_first=u'randy',
+            name_last=u'foo',
+            family_role=u'father',
+            nullable_but_required=u'ab',
         )
         ex.sess.add(p)
         ex.sess.commit()
@@ -90,10 +89,10 @@ class TestBeforeFlushHelper(object):
 
     def test_with_validation(self):
         p = ex.Person(
-            name_first = u'ughhh',
-            name_last = u'Obama',
-            family_role = u'father',
-            nullable_but_required = u'ab',
+            name_first=u'ughhh',
+            name_last=u'Obama',
+            family_role=u'father',
+            nullable_but_required=u'ab',
         )
         ex.sess.add(p)
         try:
@@ -107,10 +106,10 @@ class TestBeforeFlushHelper(object):
 
     def test_only_called_for_before_flush(self):
         p = ex.Person(
-            name_first = u'f',
-            name_last = u'l',
-            family_role = u'father',
-            nullable_but_required = u'ab',
+            name_first=u'f',
+            name_last=u'l',
+            family_role=u'father',
+            nullable_but_required=u'ab',
         )
         ex.sess.add(p)
         ex.sess.commit()
@@ -120,7 +119,7 @@ class TestBeforeFlushHelper(object):
 
     def test_with_no_entity_linkers(self):
         c = ex.Customer(
-            name = u'Sam',
+            name=u'Sam',
         )
         ex.sess.add(c)
         try:

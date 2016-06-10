@@ -6,13 +6,12 @@ import sqlalchemy.ext.declarative as sadec
 import sqlalchemy.sql as sasql
 import sqlalchemy.orm as saorm
 
-from savalidation import ValidationMixin, watch_session
+from savalidation import ValidationMixin
 import savalidation.validators as val
 from savalidation.helpers import before_flush
 import six
 
 engine = sa.create_engine('sqlite://')
-#engine.echo = True
 meta = sa.MetaData()
 Base = sadec.declarative_base(metadata=meta)
 
@@ -31,11 +30,12 @@ class Family(Base, ValidationMixin):
 
     # SA COLUMNS
     id = sa.Column(sa.Integer, primary_key=True)
-    createdts = sa.Column(sa.DateTime, nullable=False, default=datetime.now, server_default=sasql.text('CURRENT_TIMESTAMP'))
+    createdts = sa.Column(sa.DateTime, nullable=False, default=datetime.now,
+                          server_default=sasql.text('CURRENT_TIMESTAMP'))
     updatedts = sa.Column(sa.DateTime, onupdate=datetime.now)
-    name =  sa.Column(sa.Unicode(75), nullable=False, unique=True)
+    name = sa.Column(sa.Unicode(75), nullable=False, unique=True)
     reg_num = sa.Column(sa.Integer, nullable=False, unique=True)
-    status =  sa.Column(sa.Unicode(15), nullable=False, default=u'active', server_default=u'active')
+    status = sa.Column(sa.Unicode(15), nullable=False, default=u'active', server_default=u'active')
 
     # VALIDATION
     STATUS_CHOICES = (
@@ -46,15 +46,17 @@ class Family(Base, ValidationMixin):
     val.validates_constraints()
     val.validates_one_of('status', [k for k, v in STATUS_CHOICES])
 
-    #OTHER
+    # OTHER
     def __str__(self):
         return '<Family id=%s, name=%s>' % (self.id, self.name)
+
 
 class Person(Base, ValidationMixin):
     __tablename__ = 'people'
 
     id = sa.Column(sa.Integer, primary_key=True)
-    createdts = sa.Column(sa.DateTime, nullable=False, server_default=sasql.text('CURRENT_TIMESTAMP'))
+    createdts = sa.Column(sa.DateTime, nullable=False,
+                          server_default=sasql.text('CURRENT_TIMESTAMP'))
     updatedts = sa.Column(sa.DateTime, onupdate=datetime.now)
     name_first = sa.Column(sa.Unicode(75), nullable=False)
     name_last = sa.Column(sa.Unicode(75), nullable=False)
@@ -89,6 +91,7 @@ class Person(Base, ValidationMixin):
     def get(cls, oid):
         return sess.query(cls).get(oid)
 
+
 class IntegerType(Base, ValidationMixin):
     __tablename__ = 'IntegerType'
     id = sa.Column(sa.Integer, primary_key=True)
@@ -98,6 +101,7 @@ class IntegerType(Base, ValidationMixin):
 
     val.validates_constraints()
 
+
 class NumericType(Base, ValidationMixin):
     __tablename__ = 'NumericType'
     id = sa.Column(sa.Integer, primary_key=True)
@@ -105,6 +109,7 @@ class NumericType(Base, ValidationMixin):
     fld2 = sa.Column(sa.Float)
 
     val.validates_constraints()
+
 
 class DateTimeType(Base, ValidationMixin):
     __tablename__ = 'DateTimeType'
@@ -117,17 +122,18 @@ class DateTimeType(Base, ValidationMixin):
     val.converts_datetime('fld2')
     val.converts_time('fld3')
 
+
 class Customer(Base, ValidationMixin):
     __tablename__ = 'customer'
 
     # SA COLUMNS
     id = sa.Column(sa.Integer, primary_key=True)
-    name =  sa.Column(sa.String(75), nullable=False)
+    name = sa.Column(sa.String(75), nullable=False)
 
     orders = saorm.relationship('Order', backref='customer', lazy=False)
     orders2 = saorm.relationship('Order2', backref='customer', lazy=False)
 
-    #OTHER
+    # OTHER
     def __str__(self):
         return '<Customer id=%s, name=%s>' % (self.id, self.name)
 
@@ -136,22 +142,26 @@ class Customer(Base, ValidationMixin):
         if self.name == 'Sam':
             self.add_validation_error('name', 'Sam not allowed')
 
+
 class Order(Base, ValidationMixin):
     __tablename__ = 'orders'
 
     id = sa.Column(sa.Integer, primary_key=True)
     customer_id = sa.Column(sa.Integer, sa.ForeignKey(Customer.id), nullable=False)
-    createdts = sa.Column(sa.DateTime, nullable=False, default=datetime.now, server_default=sasql.text('CURRENT_TIMESTAMP'))
+    createdts = sa.Column(sa.DateTime, nullable=False, default=datetime.now,
+                          server_default=sasql.text('CURRENT_TIMESTAMP'))
     note = sa.Column(sa.Text)
 
     val.validates_constraints()
+
 
 class Order2(Base, ValidationMixin):
     __tablename__ = 'orders2'
 
     id = sa.Column(sa.Integer, primary_key=True)
     customer_id = sa.Column(sa.Integer, sa.ForeignKey(Customer.id))
-    createdts = sa.Column(sa.DateTime, nullable=False, server_default=sasql.text('CURRENT_TIMESTAMP'))
+    createdts = sa.Column(sa.DateTime, nullable=False,
+                          server_default=sasql.text('CURRENT_TIMESTAMP'))
 
     val.validates_constraints()
     val.validates_required('customer_id', sav_event='before_exec')
@@ -161,7 +171,8 @@ class NoMixin(Base):
     __tablename__ = 'nomixin'
 
     id = sa.Column(sa.Integer, primary_key=True)
-    name =  sa.Column(sa.String(75), nullable=False)
+    name = sa.Column(sa.String(75), nullable=False)
+
 
 class SomeObj(Base, ValidationMixin):
     __tablename__ = 'some_objs'
@@ -180,6 +191,7 @@ class SomeObj(Base, ValidationMixin):
     val.validates_ipaddr('ipaddr')
     val.validates_url('url')
 
+
 class ReverseConverter(val.BaseValidator):
     def _to_python(self, value, state):
         if not isinstance(value, six.string_types):
@@ -189,6 +201,7 @@ class ReverseConverter(val.BaseValidator):
 
 validates_reverse = val.formencode_factory(ReverseConverter)
 converts_reverse = val.formencode_factory(ReverseConverter, sv_convert=True)
+
 
 class ConversionTester(Base, ValidationMixin):
     __tablename__ = 'conversion_testers'

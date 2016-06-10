@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 
 from decimal import Decimal, DecimalException
-import inspect
 import sys
 
 from dateutil.parser import parse
@@ -70,6 +69,7 @@ SA_FORMENCODE_MAPPING = {
     sa.types.Integer: formencode.validators.Int,
 }
 
+
 class EntityLinker(object):
     """
         Wraps a Validator, storing the validator class and subsequent arguments
@@ -92,6 +92,7 @@ class EntityLinker(object):
         elvs.append((self.validator_cls, args, kwargs))
 entity_linker = EntityLinker
 
+
 class FEVMeta(object):
     """
         Wraps a formencode validator along with other meta information that
@@ -101,7 +102,8 @@ class FEVMeta(object):
 
     def __init__(self, fev, field_name=None, event='before_flush', is_converter=False):
         if event not in self.ALL_EVENTS:
-            raise ValueError('got "{0}" for event, should be one of: {1}'.format(event, self.ALL_EVENTS))
+            raise ValueError('got "{0}" for event, should be one of: {1}'.format(event,
+                                                                                 self.ALL_EVENTS))
         self.fev = fev
         self.field_name = field_name
         self.event = event
@@ -111,6 +113,7 @@ class FEVMeta(object):
         return '<FEVMeta: field_name={0}; event={1}; is_conv={2}; fev={3}'.format(
             self.field_name, self.event, self.is_converter, self.fev
         )
+
 
 class ValidatorBase(object):
     fe_validator = None
@@ -148,9 +151,11 @@ class ValidatorBase(object):
         sav_event = kwargs.pop('sav_event', 'before_flush')
 
         for field_to_validate in self.field_names:
-            self.create_fev_meta(self.fe_validator, field_to_validate, kwargs, sav_event, convert_flag)
+            self.create_fev_meta(self.fe_validator, field_to_validate, kwargs, sav_event,
+                                 convert_flag)
 
-    def create_fev_meta(self, fev_cls, colname, fe_kwargs={}, sav_event='before_flush', convert_flag=False, auto_not_empty=True):
+    def create_fev_meta(self, fev_cls, colname, fe_kwargs={}, sav_event='before_flush',
+                        convert_flag=False, auto_not_empty=True):
         fe_kwargs = fe_kwargs.copy()
         if auto_not_empty and self.sa_column_needs_not_empty(colname):
             fe_kwargs['not_empty'] = True
@@ -192,10 +197,13 @@ class _ValidatesPresenceOf(ValidatorBase):
     fe_validator = formencode.FancyValidator
     default_kwargs = dict(not_empty=True)
 
+
 class _ValidatesOneOf(ValidatorBase):
     fe_validator = fev.OneOf
+
     def arg_for_fe_validator(self, index, unknown_arg):
         return is_iterable(unknown_arg)
+
 
 class _MinLength(fev.MinLength):
     """ need a special class that will allow None through but not '' """
@@ -203,12 +211,15 @@ class _MinLength(fev.MinLength):
         # only consider None empty, not an empty string
         return value is None
 
+
 class _ValidatesMinLength(ValidatorBase):
     fe_validator = _MinLength
+
     def arg_for_fe_validator(self, index, unknown_arg):
         if isinstance(unknown_arg, int):
             return True
         return False
+
 
 class _IPAddress(fev.IPAddress):
     """ need a special class that will allow None through but not '' """
@@ -216,8 +227,10 @@ class _IPAddress(fev.IPAddress):
         # only consider None empty, not an empty string
         return value is None
 
+
 class _ValidatesIPAddress(ValidatorBase):
     fe_validator = _IPAddress
+
 
 class _URL(fev.URL):
     """ need a special class that will allow None through but not '' """
@@ -225,16 +238,19 @@ class _URL(fev.URL):
         # only consider None empty, not an empty string
         return value is None
 
+
 class _ValidatesURL(ValidatorBase):
     fe_validator = _URL
+
 
 class _ValidatesChoices(_ValidatesOneOf):
     def create_fe_validators(self):
         # the first formencode parameter should be a sequence of pairs.  However,
         # the FE validator needs just the list of keys that are valid, so we
         # strip those off here.
-        self.fe_args[0] = [k for k,v in self.fe_args[0]]
+        self.fe_args[0] = [k for k, v in self.fe_args[0]]
         ValidatorBase.create_fe_validators(self)
+
 
 @entity_linker
 class _ValidatesConstraints(ValidatorBase):
@@ -245,7 +261,6 @@ class _ValidatesConstraints(ValidatorBase):
         validate_type = bool(self.kwargs.get('type', True))
         excludes = self.kwargs.get('exclude', [])
 
-        fe_validators = []
         for colname in self.entitycls._sav_column_names():
             # get the SA column instance
             col = self.entitycls.__mapper__.get_property(colname).columns[0]
@@ -282,6 +297,7 @@ class _ValidatesConstraints(ValidatorBase):
                         self.create_fev_meta(fe_validator, colname, auto_not_empty=False)
                         break
 
+
 def formencode_factory(fevalidator, **kwargs):
     """
         Converts a formencode validator into an object that can be used in
@@ -302,8 +318,8 @@ def formencode_factory(fevalidator, **kwargs):
 
 validates_choices = EntityLinker(_ValidatesChoices)
 validates_constraints = _ValidatesConstraints
-validates_ipaddr= EntityLinker(_ValidatesIPAddress)
-validates_minlen= EntityLinker(_ValidatesMinLength)
+validates_ipaddr = EntityLinker(_ValidatesIPAddress)
+validates_minlen = EntityLinker(_ValidatesMinLength)
 validates_one_of = EntityLinker(_ValidatesOneOf)
 validates_presence_of = _ValidatesPresenceOf
 validates_required = _ValidatesPresenceOf

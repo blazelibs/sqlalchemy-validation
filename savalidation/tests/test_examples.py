@@ -1,12 +1,12 @@
 from __future__ import absolute_import
 import six
 import mock
-from nose.plugins.skip import SkipTest
 from nose.tools import eq_, raises
 import sqlalchemy.exc as saexc
 
 import savalidation.tests.examples as ex
 from savalidation import ValidationError
+
 
 class TestFamily(object):
 
@@ -41,7 +41,9 @@ class TestFamily(object):
             ex.sess.rollback()
             expect = {'status': [u"Value must be one of: active; inactive; moved (not 'foobar')"]}
             eq_(f1.validation_errors, expect)
-            eq_(str(e), 'validation error(s): <Family id=1, name=test_edit> [status: "Value must be one of: active; inactive; moved (not \'foobar\')"]')
+            eq_(str(e),
+                'validation error(s): <Family id=1, name=test_edit> [status: "Value must be one of:'
+                ' active; inactive; moved (not \'foobar\')"]')
         f1.status = u'inactive'
         ex.sess.commit()
 
@@ -77,7 +79,9 @@ class TestFamily(object):
         except ValidationError as e:
             expect = {'status': [u"Value must be one of: active; inactive; moved (not 'foobar')"]}
             eq_(f1.validation_errors, expect)
-            eq_(str(e), 'validation error(s): <Family id=None, name=f1> [status: "Value must be one of: active; inactive; moved (not \'foobar\')"]')
+            eq_(str(e),
+                'validation error(s): <Family id=None, name=f1> [status: "Value must be one of: '
+                'active; inactive; moved (not \'foobar\')"]')
 
     def test_missing_regnum(self):
         try:
@@ -85,7 +89,7 @@ class TestFamily(object):
             ex.sess.add(f1)
             ex.sess.commit()
             assert False, 'exception expected'
-        except ValidationError as e:
+        except ValidationError:
             expect = {'reg_num': [u"Please enter a value"]}
             eq_(f1.validation_errors, expect)
 
@@ -95,7 +99,7 @@ class TestFamily(object):
             ex.sess.add(f1)
             ex.sess.commit()
             assert False, 'exception expected'
-        except ValidationError as e:
+        except ValidationError:
             expect = {'name': [u"Please enter a value"]}
             eq_(f1.validation_errors, expect)
 
@@ -126,23 +130,26 @@ class TestFamily(object):
 
     def test_name_too_long(self):
         try:
-            f1 = ex.Family(name=u'f1'*100, reg_num=1)
+            f1 = ex.Family(name=u'f1' * 100, reg_num=1)
             ex.sess.add(f1)
             ex.sess.commit()
             assert False, 'exception expected'
-        except ValidationError as e:
+        except ValidationError:
             expect = {'name': [u'Enter a value less than 75 characters long']}
             eq_(f1.validation_errors, expect)
+
 
 class TestPerson(object):
     def tearDown(self):
         ex.sess.rollback()
 
     def test_id_is_auto_increment(self):
-        f1 = ex.Person(name_first=u'f1', name_last=u'l1', family_role=u'father', nullable_but_required=u'f')
+        f1 = ex.Person(name_first=u'f1', name_last=u'l1', family_role=u'father',
+                       nullable_but_required=u'f')
         ex.sess.add(f1)
         ex.sess.commit()
-        f2 = ex.Person(name_first=u'f1', name_last=u'l1', family_role=u'father', nullable_but_required=u'f')
+        f2 = ex.Person(name_first=u'f1', name_last=u'l1', family_role=u'father',
+                       nullable_but_required=u'f')
         f2.name_first = u'foobar'
         ex.sess.add(f2)
         ex.sess.commit()
@@ -150,30 +157,36 @@ class TestPerson(object):
 
     def test_family_role_when_invalid(self):
         try:
-            f2 = ex.Person(name_first=u'f1', name_last=u'l1', family_role=u'foobar', nullable_but_required=u'f')
+            f2 = ex.Person(name_first=u'f1', name_last=u'l1', family_role=u'foobar',
+                           nullable_but_required=u'f')
             ex.sess.add(f2)
             ex.sess.commit()
             assert False, 'should have been an exception'
-        except ValidationError as e:
-            assert f2.validation_errors['family_role'][0].startswith('Value must be one of: father; mother; child')
+        except ValidationError:
+            assert f2.validation_errors['family_role'][0].startswith(
+                'Value must be one of: father; mother; child'
+            )
 
     def test_first_name_is_too_long(self):
         try:
-            f2 = ex.Person(name_first=u'f1'*50, name_last=u'l1', family_role=u'father', nullable_but_required=u'f')
+            f2 = ex.Person(name_first=u'f1' * 50, name_last=u'l1', family_role=u'father',
+                           nullable_but_required=u'f')
             ex.sess.add(f2)
             ex.sess.commit()
             assert False, 'should have been an exception'
-        except ValidationError as e:
-            assert f2.validation_errors['name_first'][0] == 'Enter a value less than 75 characters long'
+        except ValidationError:
+            assert f2.validation_errors['name_first'][0] == \
+                'Enter a value less than 75 characters long'
 
     def test_nullable_but_required(self):
         # set to None
         try:
-            f2 = ex.Person(name_first=u'f1', name_last=u'l1', family_role=u'father', nullable_but_required=None)
+            f2 = ex.Person(name_first=u'f1', name_last=u'l1', family_role=u'father',
+                           nullable_but_required=None)
             ex.sess.add(f2)
             ex.sess.commit()
             assert False, 'should have been an exception'
-        except ValidationError as e:
+        except ValidationError:
             ex.sess.rollback()
             expect = {'nullable_but_required': [u'Please enter a value']}
             eq_(f2.validation_errors, expect)
@@ -183,16 +196,18 @@ class TestPerson(object):
             ex.sess.add(f2)
             ex.sess.commit()
             assert False, 'should have been an exception'
-        except ValidationError as e:
+        except ValidationError:
             expect = {'nullable_but_required': [u'Please enter a value']}
             eq_(f2.validation_errors, expect)
 
     @mock.patch('savalidation.tests.examples.Person.get')
     def test_before_flush_decorator_and_mocked_methods(self, m_get):
-        p = ex.Person(name_first=u'f1', name_last=u'l1', family_role=u'father', nullable_but_required=u'a')
+        p = ex.Person(name_first=u'f1', name_last=u'l1', family_role=u'father',
+                      nullable_but_required=u'a')
         ex.sess.add(p)
         ex.sess.commit()
         eq_(m_get.call_count, 0)
+
 
 class TestTypes(object):
 
@@ -214,8 +229,12 @@ class TestTypes(object):
             ex.sess.add(inst)
             ex.sess.commit()
             assert False, 'expected exception'
-        except ValidationError as e:
-            expect = {'fld': [u'Please enter an integer value'], 'fld2': [u'Please enter an integer value'], 'fld3': [u'Please enter an integer value']}
+        except ValidationError:
+            expect = {
+                'fld': [u'Please enter an integer value'],
+                'fld2': [u'Please enter an integer value'],
+                'fld3': [u'Please enter an integer value']
+            }
             eq_(inst.validation_errors, expect)
 
     def test_numeric(self):
@@ -230,7 +249,7 @@ class TestTypes(object):
             ex.sess.add(inst)
             ex.sess.commit()
             assert False, 'expected exception'
-        except ValidationError as e:
+        except ValidationError:
             expect = {'fld': [u'Please enter a number'], 'fld2': [u'Please enter a number']}
             eq_(inst.validation_errors, expect)
 
@@ -243,12 +262,17 @@ class TestTypes(object):
             ex.sess.add(inst)
             ex.sess.commit()
             assert False, 'expected exception'
-        except ValidationError as e:
-            expect = {'fld2': ['Unknown date/time string "baz"'], 'fld': [u'Please enter the date in the form mm/dd/yyyy'], 'fld3': [u'You must enter minutes (after a :)']}
+        except ValidationError:
+            expect = {
+                'fld2': ['Unknown date/time string "baz"'],
+                'fld': [u'Please enter the date in the form mm/dd/yyyy'],
+                'fld3': [u'You must enter minutes (after a :)']
+            }
             # difference in lowercase datetime format, case-insensitive dict values comparison
             eq_(set(six.iterkeys(inst.validation_errors)), set(six.iterkeys(expect)))
-            eq_(sorted([[ii.lower() for ii in i] for i in six.itervalues(inst.validation_errors)]), 
+            eq_(sorted([[ii.lower() for ii in i] for i in six.itervalues(inst.validation_errors)]),
                 sorted([[ii.lower() for ii in i] for i in six.itervalues(expect)]))
+
 
 class TestOrders(object):
 
@@ -263,26 +287,26 @@ class TestOrders(object):
         c = ex.Customer(name='ts1')
         ex.sess.add(c)
         ex.sess.flush()
-        o = ex.Order(customer_id = c.id)
+        o = ex.Order(customer_id=c.id)
         ex.sess.add(o)
         ex.sess.commit()
         assert o.customer is c
 
     def test_with_reference(self):
         c1 = ex.Customer(name='ts1')
-        o = ex.Order(customer = c1)
+        o = ex.Order(customer=c1)
         ex.sess.add(o)
         ex.sess.add(c1)
         ex.sess.commit()
-        #assert o.customer is c1
+        assert o.customer is c1
 
     def test_fk_type_checking(self):
-        o = ex.Order(customer_id = 'foobar')
+        o = ex.Order(customer_id='foobar')
         ex.sess.add(o)
         try:
             ex.sess.commit()
             assert False
-        except ValidationError as e:
+        except ValidationError:
             ex.sess.rollback()
             expect = {'customer_id': [u'Please enter an integer value']}
             eq_(o.validation_errors, expect)
@@ -293,14 +317,14 @@ class TestOrders(object):
         try:
             ex.sess.commit()
             assert False
-        except ValidationError as e:
+        except ValidationError:
             ex.sess.rollback()
             expect = {'customer_id': [u'Please enter a value']}
             eq_(o.validation_errors, expect)
 
     def test_order2_with_reference(self):
         c1 = ex.Customer(name='ts1')
-        o = ex.Order2(customer = c1)
+        o = ex.Order2(customer=c1)
         ex.sess.add(o)
         ex.sess.add(c1)
         ex.sess.commit()
@@ -312,7 +336,7 @@ class TestOrders(object):
         try:
             ex.sess.commit()
             assert False
-        except ValidationError as e:
+        except ValidationError:
             ex.sess.rollback()
             expect = {'customer_id': [u'Please enter a value']}
             eq_(o.validation_errors, expect)
@@ -325,6 +349,7 @@ class TestOrders(object):
         ex.sess.commit()
         # passing without an exception is the goal here.  We used to have a bug whe using a Text
         # column type that would fail validation.
+
 
 class TestUnit(object):
 
@@ -339,7 +364,9 @@ class TestUnit(object):
         eq_(f1._sav_column_names(), ['id', 'createdts', 'updatedts', 'name', 'reg_num', 'status'])
 
     def test_class_col_names(self):
-        eq_(ex.Family._sav_column_names(), ['id', 'createdts', 'updatedts', 'name', 'reg_num', 'status'])
+        eq_(ex.Family._sav_column_names(), ['id', 'createdts', 'updatedts', 'name', 'reg_num',
+                                            'status'])
+
 
 class TestMixin(object):
 
@@ -364,6 +391,7 @@ class TestMixin(object):
         ex.sess.remove()
         nm = ex.sess.query(ex.NoMixin).first()
         assert nm.name == 'tnc', nm.name
+
 
 class TestConversions(object):
     @classmethod

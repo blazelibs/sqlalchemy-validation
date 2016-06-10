@@ -16,4 +16,3 @@ def is_iterable(possible_iterable):
         return True
     except TypeError:
         return False
-

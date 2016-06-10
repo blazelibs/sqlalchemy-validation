@@ -111,18 +111,15 @@ class _ValidationHelper(object):
 
     def validate_fe_schema(self, schema, flag_convert):
         if not schema.fields:
-            # print 'return b/c schema has no fields'
             return
         idict = {}
         for colname in self.entity._sav_column_names():
             if colname in schema.fields:
                 idict[colname] = getattr(self.entity, colname, None)
         try:
-            # print '-------------', idict, schema, flag_convert, self.entity
             processed = schema.to_python(idict, _FEState(self.entity))
             if flag_convert:
                 self.entity.__dict__.update(processed)
-            #print '----valid', processed
         except formencode.Invalid as e:
             for field_name, msg in six.iteritems(e.unpack_errors()):
                 self.add_error(field_name, msg)
@@ -270,7 +267,6 @@ class _EventHandler(object):
             for ent in sess._sav_ents_to_validate:
                 if ent.validation_errors:
                     ents_with_error.append(ent)
-            # print ents_with_error
             if ents_with_error:
                 raise ValidationError(ents_with_error)
 
