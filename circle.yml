@@ -1,0 +1,11 @@
+dependencies:
+  override:
+    # Install tox and the pyenv plugin for tox so we can activate multiple
+    # Python binaries of the same major version onto the path at the same time
+    - pip install tox tox-pyenv
+    - pyenv local 2.7.6 3.4.3 3.5.0
+    - sudo apt-get install -y -qq libpython3.4
+
+test:
+  post:
+    - mv pytest-reports/ $CIRCLE_TEST_REPORTS/
