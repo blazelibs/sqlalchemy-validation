@@ -2,10 +2,12 @@ Change Log
 ----------
 
 
-0.3.3 released <in development>
+0.4.0 released 2016-06-10
 =========================
 
-* ?
+* added support for Python 3.4+ (thanks to Jiří Bireš)
+* set up continuous integration on Circle CI
+* coverage reports through CodeCov
 
 0.3.2 released 2016-04-20
 =========================
