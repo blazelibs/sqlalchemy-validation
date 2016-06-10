@@ -1,3 +1,12 @@
+SAValidation
+############
+
+.. image:: https://circleci.com/gh/blazelibs/sqlalchemy-validation.svg?&style=shield
+    :target: https://circleci.com/gh/blazelibs/sqlalchemy-validation
+
+.. image:: https://codecov.io/github/blazelibs/sqlalchemy-validation/coverage.svg?branch=master
+    :target: https://codecov.io/github/blazelibs/sqlalchemy-validation?branch=master
+
 Introduction
 ------------
 
