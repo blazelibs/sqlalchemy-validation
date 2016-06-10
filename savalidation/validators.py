@@ -41,7 +41,7 @@ class NumericValidator(BaseValidator):
             raise formencode.Invalid('Please enter a number', value, state)
 
     def validate_python(self, value, state):
-        super(BaseValidator, self).validate_python(value, state)
+        super(BaseValidator, self)._validate_python(value, state)
         if value is None or self.places is None or self.prec is None:
             return
         max_before_point = self.places - self.prec
