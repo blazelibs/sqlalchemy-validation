@@ -5,11 +5,11 @@ SAValidation facilitates Active Record like validation on SQLAlchemy declarative
 objects.
 
 You can install the `in-development version
-<http://bitbucket.org/blazelibs/sqlalchemy-validation/get/tip.gz#egg=savalidation-dev>`_
+<https://github.com/blazelibs/sqlalchemy-validation/archive/master.zip#egg=savalidation-dev>`_
 of savalidation with ``easy_install savalidation==dev``.
 
-The home page is currently the `bitbucket repository
-<http://bitbucket.org/blazelibs/sqlalchemy-validation/>`_.
+The home page is currently the `GitHub repository
+<https://github.com/blazelibs/sqlalchemy-validation>`_.
 
 Usage Example
 -------------
@@ -123,7 +123,7 @@ Installing & Testing Source
     # create a virtualenv
     # activate the virtualenv
 
-    $ pip install -e "hg+http://bitbucket.org/blazlibs/sqlalchemy-validation#egg=savlidation-dev"
+    $ pip install -e git+git://github.com/blazelibs/sqlalchemy-validation.git@master#egg=savalidation
     $ pip install nose
     $ cd src/savalidation/savalidation
     $ nosetests
