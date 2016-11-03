@@ -1,0 +1,26 @@
+#!/bin/bash
+# This script is ran by the docker image.  It does any necessary setup and should then kick-off
+# whatever tests you want ran by CI, presumably by using tox.  However, you can customize as
+# needed.
+#
+# Image Modification Notice: if you find yourself needing to modify the OS in any way, e.g.
+# `apt-get install ...`, this probably isn't the place to do that.  It would be better to get
+# the docker image that you are using for testing updated to have your modifications.
+# While you can technically do it here and it will probably work, it's much slower to have to do
+# that modification every time the tests run than to rebuild the docker image with the changes
+# needed.
+
+# just some debugging info
+pwd
+ls -la
+
+# Install tox from the wheelhouse using our target python version.
+# You could skip this step and use the tox installed in the docker image.  I (RS) like this option
+# b/c it gives me control over what version of tox I'm using without having to rebuild the
+# docker image.
+python3.5 -m pip install --upgrade --force-reinstall \
+    --quiet --use-wheel --no-index --find-links=requirements/wheelhouse tox
+
+# run the tests using our target python version
+python3.5 -m tox
+

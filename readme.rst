@@ -1,6 +1,9 @@
 SAValidation
 ############
 
+.. image:: https://ci.appveyor.com/api/projects/status/92uq13xnk8woa59d?svg=true
+    :target: https://ci.appveyor.com/project/level12/sqlalchemy-validation
+
 .. image:: https://circleci.com/gh/blazelibs/sqlalchemy-validation.svg?&style=shield
     :target: https://circleci.com/gh/blazelibs/sqlalchemy-validation
 

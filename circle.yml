@@ -1,7 +1,22 @@
+machine:
+  services:
+    - docker
+
 dependencies:
   override:
-    # Install tox and the pyenv plugin for tox so we can activate multiple
-    # Python binaries of the same major version onto the path at the same time
-    - pip install tox tox-pyenv
-    - pyenv local 2.7.11 3.4.4 3.5.0
-    - sudo apt-get install -y -qq libpython3.4
+    # Need to override the dependencies or ciricle will do something bad, ask Nick what that is,
+    # he couldn't remember.  :)
+    - pwd
+
+test:
+  override:
+    - ls -la
+    - /home/ubuntu/$CIRCLE_PROJECT_REPONAME/docker-run-tests
+
+deployment:
+  codecov:
+    branch: /.*/
+    commands:
+      - bash <(curl -s https://codecov.io/bash) -t  "b9815805-f574-4d89-b5ab-1b0d849d91ca"
+
+
