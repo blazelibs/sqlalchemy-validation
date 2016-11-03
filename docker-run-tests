@@ -1,0 +1,37 @@
+#!/bin/bash -ex
+# This script is used to run tox in the same docker container and in the same manner that our CI
+# will run tox.  If tox is passing locally, but CI is failing, use this script to troubleshoot.
+
+if [ -z "${CIRCLECI}" ]; then
+    # When testing locally, don't actually run docker mapped to the real source directory.  Since
+    # Docker runs as root, the file permissions get jacked up and you have to use sudo to fix it.
+    # Instead, git clone the source to a temporary directory and link the docker volume to that.
+    # This also simulates what CircleCI does and will reveal testing errors caused by files
+    # that exist locally but have not been checked into git.
+    local_src_dpath="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+    src_dname=`basename $local_src_dpath`
+    random_st=`cat /dev/urandom | env LC_CTYPE=C tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1`
+    tmp_src_dpath="/tmp/docker-$src_dname-$random_st"
+
+    SRC_DPATH=$tmp_src_dpath
+    ARTIFACTS_DPATH="$tmp_src_dpath/.ci/artifacts"
+    TEST_REPORTS_DPATH="$tmp_src_dpath/.ci/test-reports"
+
+    git clone $local_src_dpath/ $tmp_src_dpath
+else
+    SRC_DPATH="/home/ubuntu/$CIRCLE_PROJECT_REPONAME"
+    ARTIFACTS_DPATH=$CIRCLE_ARTIFACTS
+    TEST_REPORTS_DPATH=$CIRCLE_TEST_REPORTS
+    DOCKER_FLAGS=""
+fi
+
+docker run \
+    -v $SRC_DPATH:/opt/src \
+    -v $ARTIFACTS_DPATH:/opt/src/.ci/artifacts \
+    -v $TEST_REPORTS_DPATH:/opt/src/.ci/test-reports \
+    $DOCKER_FLAGS \
+    level12/python-test-multi
+
+ls $ARTIFACTS_DPATH
+ls $TEST_REPORTS_DPATH
+
