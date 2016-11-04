@@ -173,7 +173,7 @@ Credits
 This project borrows code and ideas from:
 
 * `Sqlalchemy Validations <http://code.google.com/p/sqlalchemy-validations/>`_
-* `Elixir <http://elixir.ematia.de/>`_
+* `Elixir <http://elixir.ematia.de/apidocs/elixir.html>`_
 
 Current Status
 --------------
