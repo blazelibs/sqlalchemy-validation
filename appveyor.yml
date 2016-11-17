@@ -35,7 +35,7 @@ install:
   - pip --version
 
   # Install tox from the wheelhouse
-  - pip install --use-wheel --no-index --find-links=requirements/wheelhouse tox wheel
+  - pip install --use-wheel --no-index --find-links=requirements/wheelhouse tox wheel codecov
 
 # Not a C# project, build stuff at the test step instead.
 build: false  
