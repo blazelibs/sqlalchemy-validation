@@ -12,3 +12,4 @@ pytest-reports/
 htmlcov/
 docs/_build/*
 build/*
+.ci/test-reports/*.xml

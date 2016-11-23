@@ -2,10 +2,12 @@ Change Log
 ----------
 
 
-0.4.1 released <in development>
+0.4.1 released 2016-11-23
 =========================
 
-* ?
+* fixed Python versions listed for package
+* fixed a broken link in the readme to the Elixir project
+* updated CircleCI setup and added AppVeyor
 
 0.4.0 released 2016-06-10
 =========================
