@@ -48,7 +48,7 @@ setup(
         'SQLAlchemy>=0.7.6',
         'python-dateutil',
         'FormEncode>={}'.format(
-            '1.2' if sys.version_info.major == 2 else '1.3.0a1',
+            '1.2' if sys.version_info[0] == 2 else '1.3.0a1',
         ),
         'six',
     ],
